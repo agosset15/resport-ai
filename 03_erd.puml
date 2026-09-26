@@ -1,0 +1,146 @@
+@startuml ReSport_AI_ERD
+title ReSport AI — схема данных (PostgreSQL)
+
+hide circle
+skinparam linetype ortho
+skinparam shadowing false
+skinparam class {
+  BackgroundColor #FBFCFE
+  BorderColor #7A8DA8
+}
+
+entity "**users**" as users {
+  * id : uuid <<PK>>
+  --
+  * tg_id : bigint <<UQ>>
+  username : text
+  locale : text
+  consent_version : text
+  consent_at : timestamptz
+  reminder_time : time
+  created_at : timestamptz
+}
+
+entity "**sessions**" as sessions {
+  * id : uuid <<PK>>
+  --
+  * user_id : uuid <<FK users.id>>
+  * sport : sport_enum
+  scenario_id : text
+  scenario_version : int
+  * status : session_status
+  complaint_text : text
+  created_at : timestamptz
+  finished_at : timestamptz
+}
+note right of sessions
+  scenario_version фиксируется
+  при создании — правка YAML
+  не ломает активные сессии
+end note
+
+entity "**session_answers**" as answers {
+  * id : uuid <<PK>>
+  --
+  * session_id : uuid <<FK>>
+  * question_key : text
+  raw_text : text
+  option_id : text
+  * source : answer_source
+  created_at : timestamptz
+  --
+  UQ (session_id, question_key)
+}
+note right of answers
+  source: button | llm | manual
+  — воспроизводимость решения
+end note
+
+entity "**triage_results**" as triage {
+  * id : uuid <<PK>>
+  --
+  * session_id : uuid <<FK, UQ>>
+  * outcome : outcome_enum
+  reason_codes : jsonb
+  triggered_flags : jsonb
+  explanation_text : text
+  created_at : timestamptz
+}
+
+entity "**recovery_plans**" as plans {
+  * id : uuid <<PK>>
+  --
+  * session_id : uuid <<FK, UQ>>
+  * plan_key : text
+  * plan_snapshot : jsonb
+  * current_stage : int
+  stage_started_at : timestamptz
+  * status : plan_status
+  started_at : timestamptz
+  finished_at : timestamptz
+}
+note right of plans
+  plan_snapshot — копия этапов
+  и задач из YAML на момент выдачи
+end note
+
+entity "**checkins**" as checkins {
+  * id : uuid <<PK>>
+  --
+  * plan_id : uuid <<FK>>
+  * date : date
+  * stage_index : int
+  * feeling : feeling_enum
+  tasks_done : jsonb
+  note : text
+  created_at : timestamptz
+  --
+  UQ (plan_id, date)
+}
+
+entity "**llm_calls**" as llm {
+  * id : uuid <<PK>>
+  --
+  session_id : uuid <<FK, NULL>>
+  * task : llm_task_enum
+  * model : text
+  prompt_hash : text
+  request : jsonb
+  response : jsonb
+  * valid : bool
+  tokens_in : int
+  tokens_out : int
+  latency_ms : int
+  created_at : timestamptz
+}
+
+entity "**events**" as events {
+  * id : bigserial <<PK>>
+  --
+  user_id : uuid <<FK, NULL>>
+  session_id : uuid <<FK, NULL>>
+  * type : text
+  payload : jsonb
+  created_at : timestamptz
+}
+
+users ||--o{ sessions
+users ||--o{ events
+sessions ||--|| triage
+sessions ||--o{ answers
+sessions ||--o| plans
+sessions ||--o{ llm
+sessions ||--o{ events
+plans ||--o{ checkins
+
+legend bottom
+  sport_enum:      football | basketball
+  session_status:  in_progress | referred | plan_active | completed | abandoned
+  outcome_enum:    refer_specialist | recovery_plan
+  plan_status:     active | completed | escalated | dropped
+  feeling_enum:    better | same | worse
+  answer_source:   button | llm | manual
+  llm_task_enum:   classify_complaint | normalize_answer | explain_step
+endlegend
+
+@enduml

@@ -1,0 +1,135 @@
+# ЧЕРНОВИК. Требует ревью профильного врача до беты (п.1 списка «что нужно от заказчика»).
+# Структура финальная, медицинское содержание — предварительное.
+id: football.ankle_sprain
+version: 1
+sport: football
+title: "Подвернул голеностоп"
+summary: "Острая травма голеностопа без признаков перелома"
+
+entry_hints:
+  - "голеностоп"
+  - "подвернул ногу"
+  - "лодыжка"
+  - "подвернул стопу"
+  - "вывих стопы"
+  - "растяжение связок голеностопа"
+  - "щиколотка"
+
+labels:
+  today: "Сегодня"
+  days_2_7: "2–7 дней назад"
+  more_week: "Больше недели назад"
+  freely: "Да, свободно"
+  with_pain: "Да, но больно"
+  cannot: "Нет, наступать не могу"
+  present: "Да"
+  absent: "Нет"
+  none: "Нет отёка"
+  moderate: "Умеренный"
+  severe: "Сильный"
+  first_time: "Впервые"
+  repeat: "Уже случалось раньше"
+
+questions:
+  - key: q_when
+    text: "Когда это произошло?"
+    options: [today, days_2_7, more_week]
+
+  - key: q_weightbearing
+    text: "Можешь наступать на ногу?"
+    hint: "Речь про вес тела на травмированной ноге — хотя бы несколько шагов."
+    options: [freely, with_pain, cannot]
+
+  - key: q_deformity
+    text: "Есть видимая деформация стопы или онемение?"
+    hint: "Деформация — стопа выглядит неестественно вывернутой."
+    options: [present, absent]
+
+  - key: q_swelling
+    text: "Есть отёк?"
+    options: [none, moderate, severe]
+
+  - key: q_history
+    text: "Такое с этой ногой уже случалось?"
+    options: [first_time, repeat]
+
+red_flags:
+  - id: rf_weightbearing
+    question: q_weightbearing
+    when: {equals: cannot}
+    outcome: refer_specialist
+    reason: "Невозможность опоры на ногу — нужен осмотр и исключение перелома"
+
+  - id: rf_deformity
+    question: q_deformity
+    when: {equals: present}
+    outcome: refer_specialist
+    reason: "Деформация или онемение — возможно повреждение кости или нерва"
+
+routing:
+  - when: {all: [{q_when: more_week}, {q_swelling: [moderate, severe]}]}
+    outcome: refer_specialist
+    reason_code: persistent_swelling
+  - when: {all: [{q_weightbearing: [freely, with_pain]}, {q_swelling: [none, moderate]}]}
+    outcome: recovery_plan
+    plan: ankle_sprain_basic
+    reason_code: mild_sprain
+  - default:
+    outcome: refer_specialist
+    reason_code: default_referral
+
+plans:
+  ankle_sprain_basic:
+    title: "Восстановление после растяжения голеностопа"
+    completion_text: |
+      План пройден. Возвращаться к тренировкам можно, если выполняются все условия:
+      отёка нет, ходьба и бег трусцой без боли, прыжок на травмированной ноге без боли.
+      Если хоть один пункт не выполняется или боль вернулась — обратись к специалисту.
+    stages:
+      - key: acute
+        title: "Острая фаза"
+        days: 3
+        description: "Задача — снять отёк и не нагружать связку."
+        tasks:
+          - {key: ice, text: "Лёд 15 минут, 3–4 раза в день"}
+          - {key: elevation, text: "Держать ногу выше уровня таза, когда сидишь или лежишь"}
+          - {key: compression, text: "Эластичный бинт днём, снимать на ночь"}
+          - {key: rest, text: "Без бега и игровых нагрузок"}
+        advance_if: {feeling: [better, same], consecutive: 2}
+        escalate_if: {feeling: worse, consecutive: 2}
+
+      - key: mobility
+        title: "Возврат подвижности"
+        days: 4
+        description: "Возвращаем объём движения без боли."
+        tasks:
+          - {key: ankle_circles, text: "Круговые движения стопой, 2 подхода по 10, без боли"}
+          - {key: alphabet, text: "«Рисовать» стопой алфавит, 1 раз в день"}
+          - {key: walk, text: "Ходьба в обычном темпе, без хромоты"}
+        advance_if: {feeling: [better, same], consecutive: 2, tasks_done_ratio_gte: 0.6}
+        escalate_if: {feeling: worse, consecutive: 2}
+
+      - key: strength
+        title: "Сила и баланс"
+        days: 5
+        description: "Готовим связку к нагрузке."
+        tasks:
+          - {key: calf_raises, text: "Подъёмы на носки, 3 подхода по 12"}
+          - {key: balance, text: "Стойка на одной ноге, 3 подхода по 30 секунд"}
+          - {key: band, text: "Работа с резиной на отведение стопы, 3 подхода по 15"}
+          - {key: jog, text: "Лёгкий бег трусцой, если нет боли"}
+        advance_if: {feeling: better, consecutive: 2, tasks_done_ratio_gte: 0.7}
+        escalate_if: {feeling: worse, consecutive: 2}
+
+texts:
+  refer_specialist: |
+    По твоим ответам ситуацию нужно показать специалисту — самостоятельное восстановление
+    здесь небезопасно. Это не диагноз: очный осмотр нужен, чтобы исключить перелом
+    и серьёзное повреждение связок.
+  recovery_plan_intro: |
+    По твоим ответам ситуация похожа на несильное растяжение связок голеностопа.
+    Предлагаю план восстановления: каждый день отмечаешь задачи и самочувствие.
+    Если станет хуже — я сразу предложу обратиться к специалисту.
+  escalation: |
+    Два чек-ина подряд самочувствие хуже. Так восстановление не идёт — дальше по плану
+    продолжать не будем, нужен очный осмотр.
