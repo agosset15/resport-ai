@@ -71,6 +71,34 @@ uv run ruff check . && uv run ruff format --check .
 uv run mypy core infra apps
 ```
 
+Те же шаги гоняет CI (`.github/workflows/ci.yml`), плюс `alembic upgrade → downgrade → upgrade`
+и валидацию всех YAML-сценариев.
+
+### Прогон сценария без Telegram
+
+Для ревью контента врачом — консольный симулятор, без БД, LLM и токена:
+
+```bash
+uv run python -m tools.simulate                                   # интерактивно
+uv run python -m tools.simulate --scenario football.ankle_sprain --coverage
+```
+
+`--coverage` перебирает все комбинации ответов и показывает, куда они ведут. Пример:
+
+```
+Комбинаций ответов: 108
+исход                причина                    кол-во  доля
+refer_specialist     rf_deformity                   36  33%
+refer_specialist     rf_weightbearing               36  33%
+recovery_plan        mild_sprain                    20  19%
+refer_specialist     default_referral                8  7%
+refer_specialist     persistent_swelling             8  7%
+```
+
+Доли считаются по равномерному перебору, а не по реальному распределению жалоб, —
+это карта дерева, а не прогноз воронки. Но она сразу показывает, если red flag
+выкашивает половину ветвей.
+
 ## Данные
 
 Схема — в `03_erd.puml`. Два принципиальных момента:
@@ -119,7 +147,10 @@ escalate_if: {feeling: worse, consecutive: 2}
 ## Статус
 
 Готово: каркас, движок сценариев, LLM-слой с фоллбэками, трекер с эскалацией, бот целиком,
-напоминания, CSV-выгрузка, 77 тестов.
+напоминания, CSV-выгрузка, симулятор сценариев, CI, 81 тест.
+
+Не проверено на живом окружении: миграция и репозитории против поднятой Postgres
+(`tests/db`, скипаются без БД) и сквозной прогон бота с реальным `BOT_TOKEN`.
 
 Требует заказчика (блокирует бету):
 

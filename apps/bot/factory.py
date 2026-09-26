@@ -11,7 +11,7 @@ from dishka import AsyncContainer
 from dishka.integrations.aiogram import setup_dishka
 from redis.asyncio import Redis
 
-from apps.bot.handlers import admin, onboarding, tracker, triage
+from apps.bot.handlers import admin, errors, onboarding, tracker, triage
 from apps.bot.middlewares.context import LoggingContextMiddleware
 from apps.bot.middlewares.throttle import ThrottleMiddleware
 from core.config import BotSettings, RedisSettings
@@ -48,6 +48,7 @@ def build_dispatcher(container: AsyncContainer, redis: Redis | None = None) -> D
     dp.include_router(triage.router)
     dp.include_router(tracker.router)
     dp.include_router(admin.router)
+    dp.include_router(errors.router)
 
     setup_dishka(container=container, router=dp, auto_inject=False)
     return dp

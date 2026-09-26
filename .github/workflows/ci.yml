@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: resport
+          POSTGRES_PASSWORD: resport
+          POSTGRES_DB: resport
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U resport"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_USER: resport
+      DB_PASSWORD: resport
+      DB_NAME: resport
+      LLM_PROVIDER: "null"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - run: uv sync --frozen
+
+      - name: Lint
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+
+      - name: Types
+        run: uv run mypy core infra apps
+
+      - name: Scenarios validate
+        run: |
+          uv run python -c "from core.config import get_settings; from core.scenarios.loader import load_registry; print(load_registry(get_settings().content.scenarios_dir).ids())"
+
+      - name: Migrations
+        run: |
+          uv run alembic upgrade head
+          uv run alembic downgrade base
+          uv run alembic upgrade head
+
+      - name: Tests
+        run: uv run pytest -q
