@@ -36,15 +36,29 @@ from infra.db.repositories.users import SqlUserRepository
 pytestmark = pytest.mark.db
 
 
+# Результат первой проверки кешируется: без БД каждый коннект стоит секунды,
+# а тестов с этой фикстурой много — проверяем доступность один раз за сессию.
+_db_unavailable: str | None = None
+_db_checked = False
+
+
 @pytest.fixture
 async def session() -> AsyncIterator[AsyncSession]:
+    global _db_checked, _db_unavailable
+    if _db_checked and _db_unavailable is not None:
+        pytest.skip(_db_unavailable)
+
     engine = build_engine(get_settings().db)
     try:
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
     except Exception as exc:  # noqa: BLE001 — нет БД: тест не про это
         await engine.dispose()
-        pytest.skip(f"Postgres недоступна: {exc}")
+        _db_checked = True
+        _db_unavailable = f"Postgres недоступна: {exc}"
+        pytest.skip(_db_unavailable)
+    _db_checked = True
+    _db_unavailable = None
 
     factory = build_session_factory(engine)
     async with factory() as db_session:

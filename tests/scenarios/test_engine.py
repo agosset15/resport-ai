@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import random
+
 import pytest
 
 from core.domain.enums import Outcome
@@ -188,12 +190,31 @@ class TestDeterminism:
         assert knee_engine.route(answers) == knee_engine.route(dict(answers))
 
     def test_every_answer_combination_routes(self, ankle_engine: ScenarioEngine) -> None:
-        """Полный перебор: ни одна комбинация не остаётся без исхода."""
-        import itertools
+        """Ни одна комбинация ответов не остаётся без исхода.
 
+        Полный перебор невозможен: у сценария 24 вопроса, ~1e14 комбинаций.
+        Берём детерминированную выборку — крайние точки (все первые / все последние
+        варианты, каждый вариант поодиночке на фоне первых) плюс псевдослучайные
+        комбинации с фиксированным seed.
+        """
         questions = ankle_engine.scenario.questions
-        for combo in itertools.product(*(q.option_ids() for q in questions)):
-            answers = dict(zip((q.key for q in questions), combo, strict=True))
+        keys = [q.key for q in questions]
+        options = [tuple(q.option_ids()) for q in questions]
+
+        combos: list[tuple[str, ...]] = [
+            tuple(opts[0] for opts in options),
+            tuple(opts[-1] for opts in options),
+        ]
+        # каждый вариант каждого вопроса хотя бы раз, остальные ответы — первый вариант
+        baseline = combos[0]
+        for index, opts in enumerate(options):
+            for option_id in opts:
+                combos.append((*baseline[:index], option_id, *baseline[index + 1 :]))
+        rnd = random.Random(20240501)
+        combos.extend(tuple(rnd.choice(opts) for opts in options) for _ in range(2000))
+
+        for combo in combos:
+            answers = dict(zip(keys, combo, strict=True))
             decision = ankle_engine.route(answers)
             assert decision.outcome in (Outcome.REFER_SPECIALIST, Outcome.RECOVERY_PLAN)
             if decision.outcome is Outcome.RECOVERY_PLAN:
