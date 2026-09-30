@@ -28,6 +28,8 @@ class BotSettings(_Base):
     webhook_secret: SecretStr = SecretStr("dev-secret")
     webhook_path_prefix: str = "/webhook"
     use_polling: bool = True
+    api_server_url: str = ""
+    api_server_local: bool = False
     admin_tg_ids: Annotated[list[int], NoDecode] = Field(default_factory=list)
 
     @field_validator("admin_tg_ids", mode="before")

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
+from aiogram.client.session.aiohttp import AiohttpSession
+from aiogram.client.telegram import TelegramAPIServer
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.storage.redis import RedisStorage
@@ -30,9 +32,21 @@ COMMANDS = [
 
 
 def build_bot(settings: BotSettings) -> Bot:
+    session = None
+    if settings.api_server_url:
+        api = TelegramAPIServer.from_base(
+            settings.api_server_url, is_local=settings.api_server_local
+        )
+        session = AiohttpSession(api=api)
+        log.info(
+            "bot.custom_api_server",
+            url=settings.api_server_url,
+            local=settings.api_server_local,
+        )
     return Bot(
         token=settings.token.get_secret_value(),
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+        session=session,
     )
 
 

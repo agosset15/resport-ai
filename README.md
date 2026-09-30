@@ -63,6 +63,19 @@ uv run python -m apps.worker  # напоминания
 
 При `BOT_USE_POLLING=false` и заданном `BOT_WEBHOOK_BASE_URL` api сам ставит вебхук на старте.
 
+### Свой Bot API server
+
+`BOT_API_SERVER_URL` задаёт базовый URL вместо `https://api.telegram.org`
+(например `http://localhost:8081` для
+[local bot api server](https://core.telegram.org/bots/api#using-a-local-bot-api-server)).
+Пусто — используется официальный сервер. `BOT_API_SERVER_LOCAL=true` включает
+режим local: файлы читаются с диска, а не скачиваются по HTTP.
+
+```bash
+BOT_API_SERVER_URL=http://localhost:8081
+BOT_API_SERVER_LOCAL=true
+```
+
 ### Проверки
 
 ```bash
