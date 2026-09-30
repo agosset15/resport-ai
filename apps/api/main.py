@@ -21,17 +21,15 @@ log = get_logger("api")
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
-    container = build_container()
+    container = app.state.container
     # Реестр сценариев строится здесь: битый YAML роняет старт, а не пользователя.
     registry = await container.get(ScenarioRegistry)
     log.info("scenarios.loaded", ids=list(registry.ids()))
 
     bot, dispatcher = await build_runtime(container, settings.bot, settings.redis)
 
-    app.state.container = container
     app.state.bot = bot
     app.state.dispatcher = dispatcher
-    setup_dishka(container=container, app=app)
 
     if settings.bot.token.get_secret_value():
         await set_commands(bot)
@@ -75,6 +73,10 @@ def create_app() -> FastAPI:
     setup_logging(settings.app.log_level, settings.app.log_json)
 
     app = FastAPI(title="ReSport AI", version="0.1.0", lifespan=lifespan)
+    # dishka вешает middleware — только до старта приложения, не в lifespan.
+    container = build_container()
+    app.state.container = container
+    setup_dishka(container=container, app=app)
     app.include_router(router)
 
     @app.post(settings.bot.webhook_path)

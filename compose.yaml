@@ -30,6 +30,17 @@ services:
       timeout: 3s
       retries: 10
 
+  migrate:
+    build: .
+    command: ["uv", "run", "alembic", "upgrade", "head"]
+    env_file: [.env]
+    environment:
+      DB_HOST: postgres
+      REDIS_HOST: redis
+    depends_on:
+      postgres: {condition: service_healthy}
+    restart: "no"
+
   api:
     build: .
     command: ["uv", "run", "python", "-m", "apps.api"]
@@ -42,6 +53,7 @@ services:
     depends_on:
       postgres: {condition: service_healthy}
       redis: {condition: service_healthy}
+      migrate: {condition: service_completed_successfully}
 
   worker:
     build: .
@@ -53,6 +65,7 @@ services:
     depends_on:
       postgres: {condition: service_healthy}
       redis: {condition: service_healthy}
+      migrate: {condition: service_completed_successfully}
 
   metabase:
     image: metabase/metabase:latest
