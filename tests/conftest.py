@@ -8,7 +8,10 @@ from core.domain.scenario import Scenario, ScenarioRegistry
 from core.scenarios.engine import ScenarioEngine
 from core.scenarios.loader import load_registry
 
-DEFS_DIR = Path(__file__).resolve().parent.parent / "core" / "scenarios" / "defs"
+# Тесты идут по замороженным фикстурам: медицинское содержание в core/scenarios/defs
+# перегенерируется и не должно ронять тесты логики.
+DEFS_DIR = Path(__file__).resolve().parent / "fixtures" / "defs"
+PROD_DEFS_DIR = Path(__file__).resolve().parent.parent / "core" / "scenarios" / "defs"
 
 
 @pytest.fixture(scope="session")

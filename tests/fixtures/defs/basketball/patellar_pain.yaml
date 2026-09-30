@@ -1,0 +1,157 @@
+# ЧЕРНОВИК. Требует ревью профильного врача до беты.
+id: basketball.patellar_pain
+version: 1
+sport: basketball
+title: "Болит колено спереди"
+summary: "Боль в передней части колена при нагрузке, без острой травмы"
+
+entry_hints:
+  - "колено"
+  - "болит колено"
+  - "боль под коленной чашечкой"
+  - "колено болит при прыжках"
+  - "колено ноет после тренировки"
+  - "связка надколенника"
+  - "прыгуна колено"
+
+labels:
+  gradual: "Постепенно, нарастало"
+  sudden: "Резко, в один момент"
+  below_kneecap: "Под коленной чашечкой"
+  around_kneecap: "Вокруг чашечки"
+  inside_joint: "Внутри сустава, глубоко"
+  present: "Да"
+  absent: "Нет"
+  none: "Нет отёка"
+  moderate: "Умеренный"
+  severe: "Сильный"
+  after_load: "Только после нагрузки"
+  during_load: "Во время нагрузки"
+  constant: "Постоянно, в том числе в покое"
+  weeks_0_2: "Меньше двух недель"
+  weeks_2_6: "2–6 недель"
+  weeks_6_plus: "Больше полутора месяцев"
+
+questions:
+  - key: q_onset
+    text: "Как началась боль?"
+    options: [gradual, sudden]
+
+  - key: q_duration
+    text: "Как давно болит?"
+    options: [weeks_0_2, weeks_2_6, weeks_6_plus]
+
+  - key: q_location
+    text: "Где именно болит?"
+    options: [below_kneecap, around_kneecap, inside_joint]
+
+  - key: q_locking
+    text: "Колено заклинивает или блокируется?"
+    hint: "Бывает, что колено «застревает» и его не разогнуть до конца."
+    options: [present, absent]
+
+  - key: q_giving_way
+    text: "Колено подкашивается или «уходит» под нагрузкой?"
+    options: [present, absent]
+
+  - key: q_swelling
+    text: "Есть отёк колена?"
+    options: [none, moderate, severe]
+
+  - key: q_pain_timing
+    text: "Когда болит сильнее всего?"
+    options: [after_load, during_load, constant]
+
+red_flags:
+  - id: rf_locking
+    question: q_locking
+    when: {equals: present}
+    outcome: refer_specialist
+    reason: "Блокировка сустава — возможно повреждение мениска, нужен осмотр"
+
+  - id: rf_giving_way
+    question: q_giving_way
+    when: {equals: present}
+    outcome: refer_specialist
+    reason: "Нестабильность колена — нужно исключить повреждение связок"
+
+  - id: rf_constant_pain
+    question: q_pain_timing
+    when: {equals: constant}
+    outcome: refer_specialist
+    reason: "Постоянная боль в покое выходит за рамки перегрузочной травмы"
+
+routing:
+  - when: {all: [{q_onset: sudden}, {q_swelling: [moderate, severe]}]}
+    outcome: refer_specialist
+    reason_code: acute_trauma
+  - when: {q_duration: weeks_6_plus}
+    outcome: refer_specialist
+    reason_code: chronic_pain
+  - when:
+      all:
+        - {q_onset: gradual}
+        - {q_location: [below_kneecap, around_kneecap]}
+        - {q_pain_timing: [after_load, during_load]}
+        - {q_swelling: [none, moderate]}
+    outcome: recovery_plan
+    plan: patellar_load_management
+    reason_code: overload_pattern
+  - default:
+    outcome: refer_specialist
+    reason_code: default_referral
+
+plans:
+  patellar_load_management:
+    title: "Разгрузка и укрепление передней части колена"
+    completion_text: |
+      План пройден. К полноценным тренировкам возвращайся постепенно: сначала половина
+      объёма прыжковой работы, через неделю — полный, если боли нет.
+      Если боль вернулась при нагрузке или появилась в покое — обратись к специалисту.
+    stages:
+      - key: unload
+        title: "Снижение нагрузки"
+        days: 5
+        description: "Убираем то, что провоцирует боль, но не уходим в полный покой."
+        tasks:
+          - {key: no_jumps, text: "Без прыжковой и ударной нагрузки"}
+          - {key: isometrics, text: "Изометрия квадрицепса: 5 подходов по 30 секунд"}
+          - {key: pain_log, text: "Отмечать уровень боли по ходу дня"}
+        advance_if: {feeling: [better, same], consecutive: 2, min_days: 3}
+        escalate_if: {feeling: worse, consecutive: 2}
+
+      - key: strength
+        title: "Силовая работа"
+        days: 7
+        description: "Медленные тяжёлые движения — основа лечения тендинопатии."
+        tasks:
+          - {key: squats, text: "Приседания в медленном темпе, 3 подхода по 8"}
+          - {key: leg_press, text: "Жим ногами или выпады, 3 подхода по 10"}
+          - {key: calf, text: "Подъёмы на носки, 3 подхода по 15"}
+          - {key: hip, text: "Отведение бедра с резиной, 3 подхода по 15"}
+        advance_if: {feeling: [better, same], consecutive: 3, tasks_done_ratio_gte: 0.6}
+        escalate_if: {feeling: worse, consecutive: 2}
+
+      - key: return
+        title: "Возврат к прыжкам"
+        days: 7
+        description: "Постепенно возвращаем ударную нагрузку."
+        tasks:
+          - {key: jump_rope, text: "Скакалка 3 подхода по 1 минуте"}
+          - {key: box_jumps, text: "Запрыгивания на низкую тумбу, 3 подхода по 6"}
+          - {key: strength_keep, text: "Продолжать силовые из прошлого этапа через день"}
+          - {key: court, text: "Броски и ведение без контактной игры"}
+        advance_if: {feeling: better, consecutive: 3, tasks_done_ratio_gte: 0.7}
+        escalate_if: {feeling: worse, consecutive: 2}
+
+texts:
+  refer_specialist: |
+    По твоим ответам колено стоит показать специалисту. Это не диагноз — очный осмотр
+    нужен, чтобы исключить повреждение мениска, связок и другие причины боли.
+  recovery_plan_intro: |
+    По твоим ответам это похоже на перегрузочную боль в передней части колена.
+    Предлагаю план: снижаем ударную нагрузку, укрепляем мышцы, возвращаем прыжки.
+    Каждый день отмечаешь задачи и самочувствие.
+  escalation: |
+    Самочувствие ухудшается два чек-ина подряд. Продолжать план в такой ситуации не стоит —
+    нужен очный осмотр специалиста.

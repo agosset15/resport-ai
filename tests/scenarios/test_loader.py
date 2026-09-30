@@ -13,7 +13,7 @@ from core.scenarios.loader import (
     load_scenario_file,
 )
 
-BASE = Path(__file__).resolve().parents[2] / "core" / "scenarios" / "defs"
+BASE = Path(__file__).resolve().parents[1] / "fixtures" / "defs"
 VALID = BASE / "football" / "ankle_sprain.yaml"
 
 
@@ -105,3 +105,16 @@ class TestValidation:
     def test_empty_dir_fails(self, tmp_path: Path) -> None:
         with pytest.raises(ScenarioValidationError, match="нет ни одного сценария"):
             load_registry(tmp_path)
+
+
+class TestProductionDefs:
+    """Боевые YAML не участвуют в логических тестах, но обязаны грузиться и валидироваться."""
+
+    def test_all_scenarios_load(self) -> None:
+        from tests.conftest import PROD_DEFS_DIR
+
+        prod = load_registry(PROD_DEFS_DIR)
+        assert prod.ids()
+        for scenario in prod.scenarios.values():
+            assert scenario.id.startswith(f"{scenario.sport.value}.")
+            assert scenario.routing[-1].is_default
