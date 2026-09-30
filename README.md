@@ -161,7 +161,7 @@ escalate_if: {feeling: worse, consecutive: 2}
 3. **Куда ведёт кнопка «Обратиться к специалисту»** (`CONTENT_SPECIALIST_URL`).
 4. **Тексты бота** — приветствие, ошибки, завершение плана, tone of voice (`apps/bot/texts.py`).
 5. **Политика хранения данных и хостинг** — влияет на выбор LLM-провайдера
-   (`LLM_PROVIDER`: `anthropic | openai | gigachat | null`).
+   (`LLM_PROVIDER`: `anthropic | openai | dslab | gigachat | null`).
 6. **Критерий успеха беты** — какие метрики считаем по `events`.
 
 Не входит в MVP: подбор специалистов, мультиязычность, фото/видео, оплата, роли.

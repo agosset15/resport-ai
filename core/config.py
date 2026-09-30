@@ -86,7 +86,7 @@ class RedisSettings(_Base):
 class LlmSettings(_Base):
     model_config = SettingsConfigDict(env_prefix="LLM_", env_file=".env", extra="ignore")
 
-    provider: str = "null"  # null | anthropic | openai | gigachat
+    provider: str = "null"  # null | anthropic | openai | dslab | gigachat
     model: str = "claude-sonnet-5"
     api_key: SecretStr = SecretStr("")
     base_url: str | None = None

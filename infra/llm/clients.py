@@ -140,11 +140,12 @@ class OpenAiProvider(_HttpProvider):
     """Structured output через response_format=json_schema."""
 
     name = "openai"
+    default_base_url = "https://api.openai.com"
 
     def __init__(self, settings: LlmSettings) -> None:
         super().__init__(
             settings,
-            base_url=settings.base_url or "https://api.openai.com",
+            base_url=_strip_v1(settings.base_url or self.default_base_url),
             headers={
                 "Authorization": f"Bearer {settings.api_key.get_secret_value()}",
                 "content-type": "application/json",
@@ -177,6 +178,54 @@ class OpenAiProvider(_HttpProvider):
         usage = body.get("usage", {})
         choices = body.get("choices") or []
         text = choices[0]["message"]["content"] if choices else ""
+        data = _try_json(text)
+
+        return LlmResult(
+            text=text or "",
+            model=body.get("model", self.model),
+            data=data,
+            tokens_in=usage.get("prompt_tokens"),
+            tokens_out=usage.get("completion_tokens"),
+            latency_ms=latency_ms,
+        )
+
+
+class DsLabProvider(OpenAiProvider):
+    """DSLab (https://api.dslab.tech/v1) — OpenAI-совместимый шлюз к сторонним моделям.
+
+    Отличается от OpenAI только базовым URL и тем, что часть моделей не принимает
+    `max_completion_tokens` и strict-режим json_schema, поэтому payload упрощаем.
+    """
+
+    name = "dslab"
+    default_base_url = "https://api.dslab.tech"
+
+    async def complete(
+        self,
+        *,
+        system: str,
+        user: str,
+        schema: dict[str, Any] | None = None,
+        max_tokens: int = 700,
+    ) -> LlmResult:
+        payload: dict[str, Any] = {
+            "model": self.model,
+            "max_tokens": max_tokens,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+        }
+        if schema is not None:
+            payload["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {"name": TOOL_NAME, "schema": schema},
+            }
+
+        body, latency_ms = await self._post("/v1/chat/completions", payload)
+        usage = body.get("usage", {})
+        choices = body.get("choices") or []
+        text = choices[0]["message"].get("content") if choices else ""
         data = _try_json(text)
 
         return LlmResult(
@@ -241,6 +290,12 @@ class GigaChatProvider(_HttpProvider):
         )
 
 
+def _strip_v1(base_url: str) -> str:
+    """Провайдеры публикуют base_url то с `/v1`, то без; путь всегда добавляем сами."""
+    trimmed = base_url.rstrip("/")
+    return trimmed[: -len("/v1")] if trimmed.endswith("/v1") else trimmed
+
+
 def _try_json(text: str | None) -> dict[str, Any] | None:
     if not text:
         return None
@@ -258,6 +313,7 @@ def build_provider(settings: LlmSettings) -> LlmProvider:
     providers = {
         "anthropic": AnthropicProvider,
         "openai": OpenAiProvider,
+        "dslab": DsLabProvider,
         "gigachat": GigaChatProvider,
     }
     factory = providers.get(settings.provider.lower())
