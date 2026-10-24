@@ -26,12 +26,17 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.domain.enums import (
     AnswerSource,
+    DailyCapacity,
     Feeling,
+    ItemKind,
+    ItemStatus,
     LlmTask,
     Outcome,
+    PlanSource,
     PlanStatus,
     SessionStatus,
     Sport,
+    Swelling,
 )
 from infra.db.base import Base
 
@@ -47,6 +52,11 @@ plan_status_enum = SAEnum(PlanStatus, name="plan_status", values_callable=_value
 feeling_enum = SAEnum(Feeling, name="feeling_enum", values_callable=_values)
 answer_source_enum = SAEnum(AnswerSource, name="answer_source", values_callable=_values)
 llm_task_enum = SAEnum(LlmTask, name="llm_task_enum", values_callable=_values)
+plan_source_enum = SAEnum(PlanSource, name="plan_source", values_callable=_values)
+item_kind_enum = SAEnum(ItemKind, name="item_kind", values_callable=_values)
+item_status_enum = SAEnum(ItemStatus, name="item_status", values_callable=_values)
+swelling_enum = SAEnum(Swelling, name="swelling_enum", values_callable=_values)
+daily_capacity_enum = SAEnum(DailyCapacity, name="daily_capacity", values_callable=_values)
 
 
 class UserModel(Base):
@@ -157,6 +167,10 @@ class RecoveryPlanModel(Base):
     )
     plan_key: Mapped[str] = mapped_column(String(64), nullable=False)
     plan_snapshot: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    source: Mapped[PlanSource] = mapped_column(
+        plan_source_enum, default=PlanSource.SCENARIO, nullable=False
+    )
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     current_stage: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     stage_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     status: Mapped[PlanStatus] = mapped_column(
@@ -195,6 +209,70 @@ class CheckinModel(Base):
     plan: Mapped[RecoveryPlanModel] = relationship(back_populates="checkins")
 
     __table_args__ = (UniqueConstraint("plan_id", "date", name="uq_checkin_per_day"),)
+
+
+class PlanItemLogModel(Base):
+    __tablename__ = "plan_item_logs"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    plan_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("recovery_plans.id", ondelete="CASCADE"), nullable=False
+    )
+    date: Mapped[date_type] = mapped_column(Date, nullable=False)
+    item_kind: Mapped[ItemKind] = mapped_column(item_kind_enum, nullable=False)
+    item_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[ItemStatus] = mapped_column(item_status_enum, nullable=False)
+    comment: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint("plan_id", "date", "item_kind", "item_key", name="uq_item_per_day"),
+        Index("ix_plan_items_plan_date", "plan_id", "date"),
+    )
+
+
+class WellbeingLogModel(Base):
+    __tablename__ = "wellbeing_logs"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    plan_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("recovery_plans.id", ondelete="CASCADE"), nullable=False
+    )
+    date: Mapped[date_type] = mapped_column(Date, nullable=False)
+    pain_0_10: Mapped[int] = mapped_column(Integer, nullable=False)
+    swelling: Mapped[Swelling] = mapped_column(swelling_enum, nullable=False)
+    daily_capacity: Mapped[DailyCapacity] = mapped_column(daily_capacity_enum, nullable=False)
+    note: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    __table_args__ = (UniqueConstraint("plan_id", "date", name="uq_wellbeing_per_day"),)
+
+
+class PlanRevisionModel(Base):
+    __tablename__ = "plan_revisions"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    plan_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("recovery_plans.id", ondelete="CASCADE"), nullable=False
+    )
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    snapshot: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    reason: Mapped[str] = mapped_column(String(128), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    __table_args__ = (UniqueConstraint("plan_id", "version", name="uq_plan_version"),)
 
 
 class LlmCallModel(Base):

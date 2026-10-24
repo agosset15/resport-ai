@@ -19,12 +19,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.config import get_settings
 from core.domain.enums import (
     AnswerSource,
+    DailyCapacity,
     Feeling,
+    ItemKind,
+    ItemStatus,
     LlmTask,
     Outcome,
+    PlanSource,
     PlanStatus,
     SessionStatus,
     Sport,
+    Swelling,
 )
 from infra.db.engine import build_engine, build_session_factory
 
@@ -38,6 +43,11 @@ ENUM_TYPES = (
     ("feeling_enum", Feeling),
     ("answer_source", AnswerSource),
     ("llm_task_enum", LlmTask),
+    ("plan_source", PlanSource),
+    ("item_kind", ItemKind),
+    ("item_status", ItemStatus),
+    ("swelling_enum", Swelling),
+    ("daily_capacity", DailyCapacity),
 )
 
 

@@ -10,6 +10,7 @@ dependencies = [
     "asyncpg>=0.30",
     "dishka>=1.4",
     "fastapi>=0.115",
+    "fpdf2>=2.8.9",
     "httpx>=0.28",
     "jsonschema>=4.23",
     "orjson>=3.10",

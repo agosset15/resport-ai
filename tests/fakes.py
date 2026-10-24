@@ -10,10 +10,13 @@ from uuid import UUID, uuid4
 from core.domain.entities import (
     Answer,
     Checkin,
+    PlanItemLog,
+    PlanRevision,
     RecoveryPlan,
     Session,
     TriageResult,
     User,
+    WellbeingLog,
 )
 from core.domain.enums import (
     EventType,
@@ -198,6 +201,64 @@ class FakeCheckinRepository:
         return [c.feeling for c in items[:limit]]
 
 
+class FakePlanItemRepository:
+    def __init__(self) -> None:
+        self.items: list[PlanItemLog] = []
+
+    async def upsert(self, log: PlanItemLog) -> None:
+        key = (log.plan_id, log.date, log.item_kind, log.item_key)
+        self.items = [i for i in self.items if (i.plan_id, i.date, i.item_kind, i.item_key) != key]
+        log.id = uuid4()
+        self.items.append(log)
+
+    async def for_date(self, plan_id: UUID, day: date) -> Sequence[PlanItemLog]:
+        return [i for i in self.items if i.plan_id == plan_id and i.date == day]
+
+    async def for_plan(self, plan_id: UUID) -> Sequence[PlanItemLog]:
+        return sorted((i for i in self.items if i.plan_id == plan_id), key=lambda i: i.date)
+
+    async def for_period(self, plan_id: UUID, start: date, end: date) -> Sequence[PlanItemLog]:
+        return sorted(
+            (i for i in self.items if i.plan_id == plan_id and start <= i.date <= end),
+            key=lambda i: i.date,
+        )
+
+
+class FakeWellbeingRepository:
+    def __init__(self) -> None:
+        self.items: list[WellbeingLog] = []
+
+    async def upsert(self, log: WellbeingLog) -> None:
+        self.items = [i for i in self.items if (i.plan_id, i.date) != (log.plan_id, log.date)]
+        log.id = uuid4()
+        self.items.append(log)
+
+    async def get_for_date(self, plan_id: UUID, day: date) -> WellbeingLog | None:
+        return next((i for i in self.items if i.plan_id == plan_id and i.date == day), None)
+
+    async def for_plan(self, plan_id: UUID) -> Sequence[WellbeingLog]:
+        return sorted((i for i in self.items if i.plan_id == plan_id), key=lambda i: i.date)
+
+    async def for_period(self, plan_id: UUID, start: date, end: date) -> Sequence[WellbeingLog]:
+        return sorted(
+            (i for i in self.items if i.plan_id == plan_id and start <= i.date <= end),
+            key=lambda i: i.date,
+        )
+
+
+class FakePlanRevisionRepository:
+    def __init__(self) -> None:
+        self.items: list[PlanRevision] = []
+
+    async def add(self, plan_id: UUID, version: int, snapshot: dict[str, Any], reason: str) -> None:
+        self.items.append(
+            PlanRevision(plan_id=plan_id, version=version, snapshot=snapshot, reason=reason)
+        )
+
+    async def for_plan(self, plan_id: UUID) -> Sequence[PlanRevision]:
+        return [i for i in self.items if i.plan_id == plan_id]
+
+
 class FakeEventRepository:
     def __init__(self) -> None:
         self.events: list[tuple[EventType, dict[str, Any]]] = []
@@ -267,4 +328,6 @@ def _guess_task(schema: dict[str, Any] | None) -> str:
         return LlmTask.CLASSIFY_COMPLAINT.value
     if "option_id" in props:
         return LlmTask.NORMALIZE_ANSWER.value
+    if "items" in props:
+        return LlmTask.PARSE_PRESCRIPTION.value
     return LlmTask.EXPLAIN_STEP.value

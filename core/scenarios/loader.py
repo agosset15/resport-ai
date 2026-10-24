@@ -15,6 +15,7 @@ import yaml
 from jsonschema import Draft202012Validator
 
 from core.domain.enums import Feeling, Outcome, Sport
+from core.domain.exercise import ExerciseLibrary
 from core.domain.scenario import (
     RESERVED_CONDITION_KEYS,
     CheckinCondition,
@@ -30,6 +31,7 @@ from core.domain.scenario import (
     ScenarioTexts,
     Stage,
 )
+from core.scenarios.exercises import load_library
 from core.scenarios.images import PAIN_POINT_IMAGES
 
 SCHEMA_PATH = Path(__file__).with_name("schema.json")
@@ -80,6 +82,7 @@ def _as_plan(key: str, raw: Mapping[str, Any]) -> Plan:
             days=int(s["days"]),
             description=s.get("description"),
             tasks=tuple(PlanTask(key=t["key"], text=t["text"]) for t in s["tasks"]),
+            exercises=tuple(s.get("exercises", [])),
             advance_if=_as_checkin_condition(s["advance_if"]) or CheckinCondition(),
             escalate_if=_as_checkin_condition(s.get("escalate_if")),
         )
@@ -173,7 +176,11 @@ def condition_question_refs(condition: Mapping[str, Any]) -> Iterable[tuple[str,
             yield key, options
 
 
-def _validate_semantics(scenario: Scenario, raw: Mapping[str, Any]) -> list[str]:
+def _validate_semantics(
+    scenario: Scenario,
+    raw: Mapping[str, Any],
+    library: ExerciseLibrary | None = None,
+) -> list[str]:
     errors: list[str] = []
     sid = scenario.id
 
@@ -268,6 +275,15 @@ def _validate_semantics(scenario: Scenario, raw: Mapping[str, Any]) -> list[str]
                 errors.append(f"{sid}/routing[{idx}]: план '{rule.plan}' не описан в plans")
 
     for plan in scenario.plans.values():
+        for stage in plan.stages:
+            unknown_exercises = [
+                e for e in stage.exercises if library is not None and library.get(e) is None
+            ]
+            if unknown_exercises:
+                errors.append(
+                    f"{sid}/plan {plan.key}/{stage.key}: нет таких упражнений "
+                    f"в библиотеке: {unknown_exercises}"
+                )
         stage_keys = [s.key for s in plan.stages]
         if len(set(stage_keys)) != len(stage_keys):
             errors.append(f"{sid}/plan {plan.key}: дублирующиеся stage.key")
@@ -298,7 +314,11 @@ def _validate_semantics(scenario: Scenario, raw: Mapping[str, Any]) -> list[str]
     return errors
 
 
-def load_scenario_file(path: Path, validator: Draft202012Validator | None = None) -> Scenario:
+def load_scenario_file(
+    path: Path,
+    validator: Draft202012Validator | None = None,
+    library: ExerciseLibrary | None = None,
+) -> Scenario:
     validator = validator or _load_schema()
     with path.open(encoding="utf-8") as fh:
         raw = yaml.safe_load(fh)
@@ -313,14 +333,20 @@ def load_scenario_file(path: Path, validator: Draft202012Validator | None = None
         raise ScenarioValidationError(schema_errors)
 
     scenario = _build_scenario(raw)
-    semantic_errors = _validate_semantics(scenario, raw)
+    semantic_errors = _validate_semantics(scenario, raw, library)
     if semantic_errors:
         raise ScenarioValidationError(semantic_errors)
     return scenario
 
 
-def load_registry(defs_dir: Path) -> ScenarioRegistry:
-    """Загружает все *.yaml из каталога сценариев (рекурсивно)."""
+def load_registry(defs_dir: Path, library: ExerciseLibrary | None = None) -> ScenarioRegistry:
+    """Загружает все *.yaml из каталога сценариев (рекурсивно).
+
+    Библиотека упражнений нужна, чтобы проверить ссылки `stage.exercises`.
+    По умолчанию берётся боевая: сценарий со ссылкой на несуществующее
+    упражнение должен ронять старт, а не всплывать у пользователя в плане.
+    """
+    library = library if library is not None else load_library()
     validator = _load_schema()
     files = sorted(p for p in defs_dir.rglob("*.yaml") if p.is_file())
     if not files:
@@ -330,7 +356,7 @@ def load_registry(defs_dir: Path) -> ScenarioRegistry:
     errors: list[str] = []
     for path in files:
         try:
-            scenario = load_scenario_file(path, validator)
+            scenario = load_scenario_file(path, validator, library)
         except ScenarioValidationError as exc:
             errors.extend(exc.errors)
             continue

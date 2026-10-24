@@ -15,8 +15,9 @@ from dishka import AsyncContainer, Scope
 from redis.asyncio import Redis
 
 from apps.bot import texts
-from apps.bot.keyboards.common import checkin_start_kb
+from apps.bot.keyboards.common import checkin_start_kb, daily_kb
 from core.domain.enums import EventType
+from core.services.daily import DailyPlanService
 from core.services.protocols import EventRepository, PlanRepository
 from infra.telemetry import get_logger
 
@@ -36,6 +37,7 @@ async def send_due_reminders(container: AsyncContainer, bot: Bot, redis: Redis |
     async with container(scope=Scope.REQUEST) as request_container:
         plans: PlanRepository = await request_container.get(PlanRepository)
         events: EventRepository = await request_container.get(EventRepository)
+        daily: DailyPlanService = await request_container.get(DailyPlanService)
         active = await plans.list_active()
 
         for plan, user in active:
@@ -53,10 +55,20 @@ async def send_due_reminders(container: AsyncContainer, bot: Bot, redis: Redis |
                 except Exception as exc:  # noqa: BLE001 — Redis недоступен: шлём как есть
                     log.warning("worker.redis_unavailable", error=str(exc))
 
+            # Напоминание показывает сам план на сегодня: так пользователю не нужно
+            # отдельно звать /today, а отметки идут сразу из сообщения.
             try:
-                await bot.send_message(
-                    user.tg_id, texts.REMINDER_PING, reply_markup=checkin_start_kb()
-                )
+                view = await daily.today(plan, timezone=user.timezone)
+                if view.items:
+                    await bot.send_message(
+                        user.tg_id,
+                        texts.REMINDER_TODAY.format(plan=texts.daily_text(view)),
+                        reply_markup=daily_kb(view),
+                    )
+                else:
+                    await bot.send_message(
+                        user.tg_id, texts.REMINDER_PING, reply_markup=checkin_start_kb()
+                    )
             except TelegramForbiddenError:
                 log.info("worker.blocked_by_user", tg_id=user.tg_id)
                 continue

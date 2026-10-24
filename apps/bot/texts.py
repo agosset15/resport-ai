@@ -6,7 +6,16 @@
 
 from __future__ import annotations
 
-from core.domain.enums import Feeling, Sport
+from core.domain.enums import (
+    DailyCapacity,
+    Feeling,
+    ItemStatus,
+    PlanSource,
+    Sport,
+    Swelling,
+)
+from core.services.dto import DailyPlanView
+from core.services.progress import DayMark, ProgressView
 
 SPORT_LABELS: dict[Sport, str] = {
     Sport.FOOTBALL: "⚽ Футбол",
@@ -63,6 +72,36 @@ REFER_SPECIALIST_FOOTER = (
 )
 SPECIALIST_BUTTON = "Обратиться к специалисту"
 
+PRESCRIPTION_ASK = (
+    "<b>План по назначению специалиста</b>\n\n"
+    "Пришли назначение текстом — как написал врач или реабилитолог. "
+    "Можно одним сообщением, по одному пункту на строку.\n\n"
+    "Я перенесу пункты дословно и <b>не буду менять назначенную нагрузку</b>. "
+    "Если нужно её изменить — это согласуют со специалистом, а не со мной."
+)
+PRESCRIPTION_TOO_SHORT = "Пришли назначение подробнее — пары слов мало."
+PRESCRIPTION_NEEDS_SESSION = (
+    "Сначала пройдём короткий опрос по травме: нажми /start. "
+    "После него я смогу собрать план по назначению."
+)
+PRESCRIPTION_NOT_PARSED = (
+    "Не смог разобрать назначение на пункты. Попробуй прислать по одному пункту на строку."
+)
+PRESCRIPTION_PREVIEW_HEADER = "<b>Вот что я перенёс из назначения</b>\n"
+PRESCRIPTION_PREVIEW_LIMITS = "\n<b>Ограничения:</b>"
+PRESCRIPTION_PREVIEW_DAYS = "\nСрок: {days} дней"
+PRESCRIPTION_PREVIEW_FALLBACK = (
+    "\n<i>Разобрал по строкам, без изменений — это твой текст как есть.</i>"
+)
+PRESCRIPTION_PREVIEW_FOOTER = "\nВсё верно? Дозировки и формулировки я оставил как в назначении."
+PRESCRIPTION_ACCEPT_BUTTON = "Всё верно, собрать план"
+PRESCRIPTION_RETRY_BUTTON = "Прислать заново"
+PRESCRIPTION_RETRY = "Хорошо, пришли назначение заново."
+PRESCRIPTION_PLAN_STARTED = (
+    "План по назначению собран, {days} дней. Нагрузку я не меняю — "
+    "изменения согласуй со специалистом."
+)
+
 PAIN_POINT_ASK = "Посмотри на картинку: похоже на твой случай? Отметь, где болит.\n\n{title}"
 PAIN_POINT_CONFIRM_BUTTON = "Да, болит здесь"
 PAIN_POINT_REJECT_BUTTON = "Болит не здесь"
@@ -110,6 +149,211 @@ ASK_REMINDER_TIME = (
 REMINDER_SET = "Буду напоминать в {time}. Можно изменить командой /reminder."
 REMINDER_BAD_FORMAT = "Не понял время. Напиши в формате ЧЧ:ММ, например 19:30."
 REMINDER_PING = "Время чек-ина. Как прошёл день?"
+REMINDER_TODAY = "Напоминаю про восстановление.\n\n{plan}"
+
+REPORT_PREVIEW_HEADER = "<b>Отчёт за период {start} — {end}</b>"
+REPORT_PREVIEW_BODY = (
+    "\n\nПройдено занятий: {done}{total_part}\n"
+    "Частично: {partial} · пропущено: {skipped} · нет данных: {no_data}\n"
+    "Записей о самочувствии: {wellbeing}\n"
+    "Вопросов к приёму: {questions}"
+)
+REPORT_PREVIEW_TOTAL = " из {total} ({percent}% программы)"
+REPORT_PREVIEW_FOOTER = "\n\nМожно скачать файлом и показать врачу. Это не диагноз и не заключение."
+REPORT_PDF_BUTTON = "Скачать PDF"
+REPORT_TEXT_BUTTON = "Скачать текстом"
+REPORT_NO_DATA = "Пока нечего показывать: отметь план командой /today и запиши самочувствие /diary."
+REPORT_PDF_UNAVAILABLE = (
+    "PDF собрать не удалось — на сервере нет шрифта с кириллицей. "
+    "Отправляю отчёт текстом, содержание то же."
+)
+
+DAY_MARK_ICONS: dict[DayMark, str] = {
+    DayMark.DONE: "🟩",
+    DayMark.PARTIAL: "🟨",
+    DayMark.SKIPPED: "⬜",
+    DayMark.NO_DATA: "▫️",
+}
+
+PROGRESS_HEADER = "<b>Мой прогресс</b>\n{plan_title}"
+PROGRESS_SESSIONS = "\n\nПройдено {done} из {total} занятий — {percent}% программы"
+PROGRESS_SESSIONS_NO_TOTAL = (
+    "\n\nПройдено занятий: {done}. Полный объём программы пока не задан, "
+    "поэтому общий процент не показываю."
+)
+PROGRESS_PARTIAL = "\nЧастично выполнено: {partial} — в зачёт программы не идёт"
+PROGRESS_STAGE = "\n\nЭтап {stage_number} из {stage_total}: {stage_title} (день {day} из {days})"
+PROGRESS_CALENDAR = "\n\n<b>Регулярность</b>\n{calendar}"
+PROGRESS_CALENDAR_LEGEND = "\n🟩 выполнено · 🟨 частично · ⬜ пропуск · ▫️ нет данных"
+PROGRESS_TREND_HEADER = "\n\n<b>Самочувствие</b>"
+PROGRESS_TREND_START = "\nБоль была {first} из 10, сейчас {last} из 10 — {verdict}"
+PROGRESS_TREND_PREV = "\nС прошлой записи: {verdict}"
+PROGRESS_TREND_NONE = "\nЗаписей о самочувствии пока нет — отметь его командой /diary."
+PROGRESS_NEXT = "\n\n<b>Ближайшая цель</b>\n{checkpoint}"
+PROGRESS_DISCLAIMER = (
+    "\n\n<i>Процент прохождения программы — это про выполненные занятия, "
+    "а не про то, насколько зажила травма. Это разные вещи.</i>"
+)
+PROGRESS_COMPLETED = "\n\n<b>Программа пройдена.</b>"
+PROGRESS_REVISED = (
+    "\n\n<i>План менялся {count} раз(а), поэтому прогресс пересчитан по текущей версии.</i>"
+)
+
+
+def _pain_verdict(delta: int | None) -> str:
+    if delta is None:
+        return "сравнить пока не с чем"
+    if delta < 0:
+        return f"меньше на {abs(delta)}"
+    if delta > 0:
+        return f"больше на {delta}"
+    return "без изменений"
+
+
+def progress_text(view: ProgressView, revisions: int = 0) -> str:
+    text = PROGRESS_HEADER.format(plan_title=view.plan_title)
+
+    percent = view.percent
+    if percent is None:
+        text += PROGRESS_SESSIONS_NO_TOTAL.format(done=view.completed_sessions)
+    else:
+        text += PROGRESS_SESSIONS.format(
+            done=view.completed_sessions, total=view.total_sessions, percent=percent
+        )
+    if view.partial_sessions:
+        text += PROGRESS_PARTIAL.format(partial=view.partial_sessions)
+
+    if view.program_completed:
+        text += PROGRESS_COMPLETED
+    else:
+        text += PROGRESS_STAGE.format(
+            stage_number=view.stage_index + 1,
+            stage_total=view.stage_total,
+            stage_title=view.stage_title,
+            day=view.stage_day,
+            days=view.stage_days,
+        )
+
+    if view.calendar:
+        calendar = "".join(DAY_MARK_ICONS[cell.mark] for cell in view.calendar)
+        text += PROGRESS_CALENDAR.format(calendar=calendar) + PROGRESS_CALENDAR_LEGEND
+
+    text += PROGRESS_TREND_HEADER
+    trend = view.trend
+    if trend.last_pain is None:
+        text += PROGRESS_TREND_NONE
+    else:
+        text += PROGRESS_TREND_START.format(
+            first=trend.first_pain,
+            last=trend.last_pain,
+            verdict=_pain_verdict(trend.since_start),
+        )
+        if trend.since_previous is not None:
+            text += PROGRESS_TREND_PREV.format(verdict=_pain_verdict(trend.since_previous))
+
+    text += PROGRESS_NEXT.format(checkpoint=view.next_checkpoint)
+    if revisions:
+        text += PROGRESS_REVISED.format(count=revisions)
+    return text + PROGRESS_DISCLAIMER
+
+
+SWELLING_LABELS: dict[Swelling, str] = {
+    Swelling.NONE: "Отёка нет",
+    Swelling.MILD: "Небольшой",
+    Swelling.MODERATE: "Умеренный",
+    Swelling.SEVERE: "Сильный",
+}
+
+CAPACITY_LABELS: dict[DailyCapacity, str] = {
+    DailyCapacity.FULL: "Всё как обычно",
+    DailyCapacity.LIMITED: "Кое-что даётся труднее",
+    DailyCapacity.MINIMAL: "Многое не получается",
+}
+
+WELLBEING_ASK_PAIN = (
+    "<b>Самочувствие за сегодня</b>\n\n"
+    "Насколько болит сейчас? 0 — не болит совсем, 10 — сильнее некуда."
+)
+WELLBEING_ASK_SWELLING = "Что с отёком?"
+WELLBEING_ASK_CAPACITY = "Что получается в быту — ходить, подниматься по лестнице, одеваться?"
+WELLBEING_ASK_NOTE = "Хочешь что-то добавить своими словами? Напиши — или отправь «-», если нечего."
+WELLBEING_SAVED = "Записал. Это попадёт в дневник и в отчёт."
+WELLBEING_ALREADY_DONE = "За сегодня запись уже есть — новая её заменит."
+WELLBEING_INCOMPLETE = "Часть ответов потерялась, давай заново."
+
+ITEM_STATUS_LABELS: dict[ItemStatus, str] = {
+    ItemStatus.DONE: "Выполнено",
+    ItemStatus.PARTIAL: "Частично",
+    ItemStatus.SKIPPED: "Пропущено",
+}
+
+ITEM_STATUS_ICONS: dict[ItemStatus | None, str] = {
+    ItemStatus.DONE: "✅",
+    ItemStatus.PARTIAL: "🟡",
+    ItemStatus.SKIPPED: "⬜",
+    None: "▫️",
+}
+
+DAILY_HEADER = (
+    "<b>План на сегодня</b>\n"
+    "{plan_title}\n"
+    "Этап {stage_number} из {stage_total}: {stage_title}\n"
+    "День {day_number} из {day_total}"
+)
+DAILY_PRESCRIPTION_NOTE = (
+    "\n\n<i>План собран из назначения специалиста. Нагрузку я не меняю — "
+    "изменения согласуй с ним.</i>"
+)
+DAILY_PROGRESS_LINE = "\n\nОтмечено: {done} выполнено, {partial} частично, {skipped} пропущено"
+DAILY_ALL_MARKED = "\n\nВсё на сегодня отмечено. Осталось записать самочувствие."
+DAILY_EMPTY = "На этом этапе упражнений нет — только наблюдение."
+DAILY_WELLBEING_BUTTON = "Записать самочувствие"
+DAILY_WELLBEING_DONE_BUTTON = "Самочувствие записано ✓"
+
+ITEM_CARD_TITLE = "<b>{title}</b>"
+ITEM_CARD_DOSAGE = "\n<b>Сколько:</b> {dosage}"
+ITEM_CARD_LIMITS = "\n<b>Ограничения:</b>\n{limits}"
+ITEM_CARD_LOOKUP = "\n<i>{hint}</i>"
+ITEM_CARD_STATUS = "\n\nОтметка: {status}"
+ITEM_CARD_COMMENT = "\nКомментарий: {comment}"
+ITEM_DONE_BUTTON = "✅ Выполнено"
+ITEM_PARTIAL_BUTTON = "🟡 Частично"
+ITEM_SKIP_BUTTON = "⬜ Пропустил"
+ITEM_COMMENT_BUTTON = "💬 Комментарий"
+ITEM_REFRESH_BUTTON = "← К плану на сегодня"
+ITEM_ASK_COMMENT = "Напиши комментарий к этому пункту — что мешало или как ощущалось."
+ITEM_COMMENT_SAVED = "Записал комментарий."
+ITEM_MARKED = "Отметил: {status}"
+ITEM_GONE = "Этот пункт больше не в плане на сегодня."
+
+
+def daily_text(view: DailyPlanView) -> str:
+    text = DAILY_HEADER.format(
+        plan_title=view.plan_title,
+        stage_number=view.stage_index + 1,
+        stage_total=view.stage_total,
+        stage_title=view.stage_title,
+        day_number=view.day_number,
+        day_total=view.day_total,
+    )
+    if view.source is PlanSource.PRESCRIPTION:
+        text += DAILY_PRESCRIPTION_NOTE
+    if view.stage_description:
+        text += f"\n\n<i>{view.stage_description}</i>"
+    if not view.items:
+        return text + "\n\n" + DAILY_EMPTY
+
+    text += "\n"
+    for index, item in enumerate(view.items, start=1):
+        icon = ITEM_STATUS_ICONS[item.status] if item.status else ITEM_STATUS_ICONS[None]
+        text += f"\n{icon} {index}. {item.title}"
+        if item.dosage:
+            text += f" — {item.dosage}"
+    text += DAILY_PROGRESS_LINE.format(done=view.done, partial=view.partial, skipped=view.skipped)
+    if view.all_marked and not view.wellbeing_done:
+        text += DAILY_ALL_MARKED
+    return text
+
 
 STAGE_HEADER = (
     "<b>{plan_title}</b>\n"
@@ -133,6 +377,11 @@ HELP = (
     "<b>Команды</b>\n"
     "/start — начать заново\n"
     "/plan — текущий этап плана\n"
+    "/today — план на сегодня\n"
+    "/diary — записать самочувствие\n"
+    "/progress — мой прогресс\n"
+    "/report — отчёт за период\n"
+    "/prescription — план по назначению врача\n"
     "/checkin — отметить день\n"
     "/reminder — изменить время напоминания\n"
     "/help — эта справка\n\n"

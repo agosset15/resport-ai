@@ -791,6 +791,7 @@ plans:
       - {key: comfort_activity, text: 'Обычные бытовые дела в комфортных пределах — без тренировок, бега и игры'}
       - {key: no_self_tests, text: 'Не проверять травму прыжками, нажатием и растяжкой'}
       - {key: morning_check, text: 'Утром отметить боль (0–10), отёк и как даётся обычная нагрузка'}
+      exercises: [quad_setting, heel_slides, calm_walk]
       advance_if: {feeling: better, consecutive: 2, min_days: 2}
       escalate_if: {feeling: worse, consecutive: 2}
     - key: load_return
@@ -802,6 +803,7 @@ plans:
       - {key: gradual_load, text: 'Добавлять нагрузку маленькими шагами: больно или хуже к утру — шаг назад'}
       - {key: no_sport_yet, text: 'Без тренировок, игры, прыжков и смены направления'}
       - {key: morning_check, text: 'Утром отметить боль (0–10), отёк и как даётся нагрузка'}
+      exercises: [straight_leg_raise, wall_sit_short, step_down_slow]
       advance_if: {feeling: better, consecutive: 3, tasks_done_ratio_gte: 0.7}
       escalate_if: {feeling: worse, consecutive: 2}
   self_rehab_guarded:
@@ -820,6 +822,7 @@ plans:
       - {key: no_self_tests, text: 'Не проверять травму прыжками, нажатием и растяжкой'}
       - {key: morning_check, text: 'Утром отметить боль (0–10), отёк и как даётся обычная нагрузка'}
       - {key: note_change, text: 'Записать, если появился новый признак: онемение, деформация, температура, рост отёка'}
+      exercises: [quad_setting, heel_slides, calm_walk]
       advance_if: {feeling: better, consecutive: 3, min_days: 3}
       escalate_if:
         feeling: [same, worse]

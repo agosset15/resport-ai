@@ -71,6 +71,39 @@ async def advance(
     )
 
 
+async def start_plan_from_prescription(
+    message: Message,
+    state: FSMContext,
+    *,
+    triage: TriageService,
+    tracker: TrackerService,
+    content: ContentSettings,
+    session: Session,
+    items: list[str],
+    limits: list[str],
+    duration_days: int | None,
+    timezone: str | None = None,
+) -> None:
+    """План из назначения специалиста. Нагрузку бот не меняет, только переносит."""
+    scenario = triage.scenario_of(session)
+    plan, _ = await tracker.start_prescription_plan(
+        session,
+        scenario,
+        items=items,
+        limits=limits,
+        duration_days=duration_days,
+    )
+    stage = await tracker.today_view(plan, timezone=timezone)
+    total_days = sum(s.days for s in tracker.plan_of(plan).stages)
+
+    await message.answer(texts.PRESCRIPTION_PLAN_STARTED.format(days=total_days))
+    await send_stage(message, stage)
+
+    await state.set_state(TrackerFlow.waiting_reminder_time)
+    await state.update_data(plan_id=str(plan.id))
+    await message.answer(texts.ASK_REMINDER_TIME, reply_markup=reminder_kb())
+
+
 async def start_plan(
     message: Message,
     state: FSMContext,

@@ -129,6 +129,48 @@ BODY_REGIONS = {
     "patellar_pain": "knee",
 }
 
+#: Упражнения для планов самостоятельного восстановления, по области тела.
+#: Этап «снять нагрузку» получает фазу acute, этап возвращения нагрузки — subacute
+#: и return. Содержание карточек лежит в core/scenarios/library/exercises.yaml и
+#: ревьюится врачом отдельно; здесь только выбор, что попадает в какой этап.
+EXERCISES_BY_REGION: dict[str, dict[str, tuple[str, ...]]] = {
+    "ankle_foot": {
+        "acute": ("ankle_pumps", "ankle_alphabet", "calm_walk"),
+        "load_return": ("ankle_isometric_outward", "calf_raises_double", "single_leg_balance"),
+    },
+    "knee": {
+        "acute": ("quad_setting", "heel_slides", "calm_walk"),
+        "load_return": ("straight_leg_raise", "wall_sit_short", "step_down_slow"),
+    },
+    "thigh_front": {
+        "acute": ("quad_isometric_seated", "calm_walk"),
+        "load_return": ("gentle_knee_bend_prone", "mini_squat"),
+    },
+    "thigh_back": {
+        "acute": ("hamstring_isometric_heel_dig", "calm_walk"),
+        "load_return": ("glute_bridge", "single_leg_bridge", "hamstring_gentle_reach"),
+    },
+    "groin": {
+        "acute": ("adductor_squeeze", "calm_walk"),
+        "load_return": ("adductor_squeeze_progress", "side_lying_leg_raise"),
+    },
+    "hand_finger": {
+        "acute": ("finger_gentle_rom", "breathing_relax"),
+        "load_return": ("tendon_glide", "soft_grip_squeeze"),
+    },
+}
+
+
+def exercises_line(region: str | None, stage: str) -> str:
+    """Строка `exercises: [...]` для этапа или пусто, если упражнений нет."""
+    if region is None:
+        return ""
+    ids = EXERCISES_BY_REGION.get(region, {}).get(stage, ())
+    if not ids:
+        return ""
+    return f"      exercises: [{', '.join(ids)}]\n"
+
+
 PLAN_BASIC = """  self_rehab_basic:
     title: Самостоятельное восстановление
     completion_text: |
@@ -144,7 +186,7 @@ PLAN_BASIC = """  self_rehab_basic:
       - {key: comfort_activity, text: 'Обычные бытовые дела в комфортных пределах — без тренировок, бега и игры'}
       - {key: no_self_tests, text: 'Не проверять травму прыжками, нажатием и растяжкой'}
       - {key: morning_check, text: 'Утром отметить боль (0–10), отёк и как даётся обычная нагрузка'}
-      advance_if: {feeling: better, consecutive: 2, min_days: 2}
+{exercises_acute}      advance_if: {feeling: better, consecutive: 2, min_days: 2}
       escalate_if: {feeling: worse, consecutive: 2}
     - key: load_return
       title: Постепенное возвращение нагрузки
@@ -155,7 +197,7 @@ PLAN_BASIC = """  self_rehab_basic:
       - {key: gradual_load, text: 'Добавлять нагрузку маленькими шагами: больно или хуже к утру — шаг назад'}
       - {key: no_sport_yet, text: 'Без тренировок, игры, прыжков и смены направления'}
       - {key: morning_check, text: 'Утром отметить боль (0–10), отёк и как даётся нагрузка'}
-      advance_if: {feeling: better, consecutive: 3, tasks_done_ratio_gte: 0.7}
+{exercises_load_return}      advance_if: {feeling: better, consecutive: 3, tasks_done_ratio_gte: 0.7}
       escalate_if: {feeling: worse, consecutive: 2}
 """
 
@@ -175,7 +217,7 @@ PLAN_GUARDED = """  self_rehab_guarded:
       - {key: no_self_tests, text: 'Не проверять травму прыжками, нажатием и растяжкой'}
       - {key: morning_check, text: 'Утром отметить боль (0–10), отёк и как даётся обычная нагрузка'}
       - {key: note_change, text: 'Записать, если появился новый признак: онемение, деформация, температура, рост отёка'}
-      advance_if: {feeling: better, consecutive: 3, min_days: 3}
+{exercises_acute}      advance_if: {feeling: better, consecutive: 3, min_days: 3}
       escalate_if:
         feeling: [same, worse]
         consecutive: 2
@@ -308,12 +350,21 @@ def process(path: Path) -> tuple[str, FileReport]:
     p_start, p_end = section_bounds(lines, "plans")
     new_plans = lines[p_start + 1 : p_end]
     existing = "".join(new_plans)
+    scenario_key = path.stem.split(".")[-1]
+    region = BODY_REGIONS.get(scenario_key)
+    substitutions = {
+        "exercises_acute": exercises_line(region, "acute"),
+        "exercises_load_return": exercises_line(region, "load_return"),
+    }
     for plan_key, block_text in (
         ("self_rehab_basic", PLAN_BASIC),
         ("self_rehab_guarded", PLAN_GUARDED),
     ):
         if plan_key in report.plans_used and f"{plan_key}:" not in existing:
-            new_plans = [*new_plans, block_text]
+            filled = block_text
+            for name, value in substitutions.items():
+                filled = filled.replace("{" + name + "}", value)
+            new_plans = [*new_plans, filled]
 
     # 3. texts: преамбула самостоятельного восстановления
     t_start, t_end = section_bounds(lines, "texts")
@@ -334,8 +385,6 @@ def process(path: Path) -> tuple[str, FileReport]:
             continue
         out_head.append(line)
 
-    scenario_key = path.stem.split(".")[-1]
-    region = BODY_REGIONS.get(scenario_key)
     if region and "body_region:" not in "".join(out_head):
         for i, line in enumerate(out_head):
             if line.startswith("entry_hints:"):

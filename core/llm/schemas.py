@@ -45,6 +45,27 @@ class NormalizeAnswer(BaseModel):
     option_id: str = Field(description="id варианта из списка или 'unclear'")
 
 
+class PrescriptionPlan(BaseModel):
+    """Разбор назначения специалиста.
+
+    Literal здесь не нужен: модель не выбирает из нашего списка упражнений, а переносит
+    формулировки врача дословно. Подменять назначенную нагрузку своими дозировками
+    нельзя — это требование ТЗ, а не вкусовое решение.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    items: list[str] = Field(
+        default_factory=list,
+        max_length=15,
+        description="пункты назначения, дословно",
+    )
+    limits: list[str] = Field(
+        default_factory=list, max_length=10, description="ограничения и запреты"
+    )
+    duration_days: int | None = Field(default=None, ge=1, le=90)
+
+
 class ExplainStep(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

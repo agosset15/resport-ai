@@ -9,11 +9,16 @@ from uuid import UUID
 
 from core.domain.enums import (
     AnswerSource,
+    DailyCapacity,
     Feeling,
+    ItemKind,
+    ItemStatus,
     Outcome,
+    PlanSource,
     PlanStatus,
     SessionStatus,
     Sport,
+    Swelling,
 )
 
 
@@ -75,10 +80,52 @@ class RecoveryPlan:
     plan_key: str
     plan_snapshot: dict[str, Any]
     current_stage: int = 0
+    source: PlanSource = PlanSource.SCENARIO
+    version: int = 1
     status: PlanStatus = PlanStatus.ACTIVE
     stage_started_at: datetime | None = None
     started_at: datetime | None = None
     finished_at: datetime | None = None
+
+
+@dataclass(slots=True)
+class PlanItemLog:
+    """Отметка по одному пункту плана за день: выполнено, частично или пропущено."""
+
+    plan_id: UUID
+    date: date
+    item_kind: ItemKind
+    item_key: str
+    status: ItemStatus
+    comment: str | None = None
+    id: UUID | None = None
+    created_at: datetime | None = None
+
+
+@dataclass(slots=True)
+class WellbeingLog:
+    """Самочувствие за день. Вопросы одни и те же, иначе сравнивать нечего."""
+
+    plan_id: UUID
+    date: date
+    pain_0_10: int
+    swelling: Swelling
+    daily_capacity: DailyCapacity
+    note: str | None = None
+    id: UUID | None = None
+    created_at: datetime | None = None
+
+
+@dataclass(slots=True)
+class PlanRevision:
+    """Версия плана. История нужна, чтобы пересчёт прогресса можно было объяснить."""
+
+    plan_id: UUID
+    version: int
+    snapshot: dict[str, Any]
+    reason: str
+    id: UUID | None = None
+    created_at: datetime | None = None
 
 
 @dataclass(slots=True)

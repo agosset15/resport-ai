@@ -14,6 +14,7 @@ from core.domain.enums import (
     Sport,
 )
 from core.domain.scenario import Scenario
+from core.scenarios.exercises import load_library
 from core.scenarios.plan_engine import TrackerAction
 from core.services.tracker import TrackerService
 from tests.fakes import (
@@ -42,6 +43,7 @@ class Harness:
             sessions=self.sessions,
             triage=self.triage,
             events=self.events,
+            library=load_library(),
         )
 
 

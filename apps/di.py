@@ -18,20 +18,28 @@ from core.config import (
     Settings,
     get_settings,
 )
+from core.domain.exercise import ExerciseLibrary
 from core.domain.scenario import ScenarioRegistry
 from core.llm.provider import LlmProvider
 from core.llm.runner import LlmCache, LlmRunner
+from core.scenarios.exercises import load_library
 from core.scenarios.loader import load_registry
+from core.services.daily import DailyPlanService
+from core.services.diary_service import DiaryService
 from core.services.export import ExportService
 from core.services.protocols import (
     CheckinRepository,
     EventRepository,
     LlmCallRepository,
+    PlanItemRepository,
     PlanRepository,
+    PlanRevisionRepository,
     SessionRepository,
     TriageRepository,
     UserRepository,
+    WellbeingRepository,
 )
+from core.services.report import ReportService
 from core.services.tracker import TrackerService
 from core.services.triage import TriageService
 from core.services.user import UserService
@@ -39,6 +47,11 @@ from infra.cache.llm_cache import RedisLlmCache
 from infra.cache.redis import build_redis
 from infra.db.engine import build_engine, build_session_factory
 from infra.db.repositories.audit import SqlEventRepository, SqlLlmCallRepository
+from infra.db.repositories.diary import (
+    SqlPlanItemRepository,
+    SqlPlanRevisionRepository,
+    SqlWellbeingRepository,
+)
 from infra.db.repositories.export import SqlExportRepository
 from infra.db.repositories.plans import SqlCheckinRepository, SqlPlanRepository
 from infra.db.repositories.sessions import SqlSessionRepository
@@ -99,9 +112,14 @@ class InfraProvider(Provider):
         await client.aclose()
 
     @provide
-    def scenarios(self, content: ContentSettings) -> ScenarioRegistry:
+    def exercise_library(self) -> ExerciseLibrary:
+        """Библиотека упражнений: ревьюится врачом отдельно от сценариев."""
+        return load_library()
+
+    @provide
+    def scenarios(self, content: ContentSettings, library: ExerciseLibrary) -> ScenarioRegistry:
         """Валидация YAML на старте: битый сценарий роняет процесс, а не пользователя."""
-        return load_registry(content.scenarios_dir)
+        return load_registry(content.scenarios_dir, library)
 
     @provide
     async def llm_provider(self, settings: LlmSettings) -> AsyncIterator[LlmProvider]:
@@ -131,6 +149,9 @@ class RepositoryProvider(Provider):
     triage = provide(SqlTriageRepository, provides=TriageRepository)
     plans = provide(SqlPlanRepository, provides=PlanRepository)
     checkins = provide(SqlCheckinRepository, provides=CheckinRepository)
+    plan_items = provide(SqlPlanItemRepository, provides=PlanItemRepository)
+    wellbeing = provide(SqlWellbeingRepository, provides=WellbeingRepository)
+    plan_revisions = provide(SqlPlanRevisionRepository, provides=PlanRevisionRepository)
     llm_calls = provide(SqlLlmCallRepository, provides=LlmCallRepository)
     events = provide(SqlEventRepository, provides=EventRepository)
     export_source = provide(SqlExportRepository)
@@ -152,6 +173,9 @@ class ServiceProvider(Provider):
     user_service = provide(UserService)
     triage_service = provide(TriageService)
     tracker_service = provide(TrackerService)
+    daily_service = provide(DailyPlanService)
+    diary_service = provide(DiaryService)
+    report_service = provide(ReportService)
 
     @provide
     def export_service(self, source: SqlExportRepository) -> ExportService:

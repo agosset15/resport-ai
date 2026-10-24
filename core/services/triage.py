@@ -346,6 +346,21 @@ class TriageService:
             llm_explained=llm_explained,
         )
 
+    async def note_event(
+        self,
+        session: Session,
+        event: EventType,
+        *,
+        payload: dict[str, object] | None = None,
+    ) -> None:
+        """Событие, привязанное к сессии, без побочных эффектов в домене."""
+        await self._events.add(
+            event,
+            user_id=session.user_id,
+            session_id=session.id,
+            payload={"scenario_id": session.scenario_id, **(payload or {})},
+        )
+
     async def note_pain_point(self, session: Session, *, confirmed: bool) -> None:
         """Фиксирует, подтвердил ли пользователь точку боли на картинке."""
         await self._events.add(

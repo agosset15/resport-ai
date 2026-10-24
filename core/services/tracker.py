@@ -6,13 +6,22 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import UTC, date, datetime
 from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from core.domain.entities import Checkin, RecoveryPlan, Session, TriageResult, User
-from core.domain.enums import EventType, Feeling, Outcome, PlanStatus, SessionStatus
-from core.domain.scenario import Plan, Scenario
+from core.domain.enums import (
+    EventType,
+    Feeling,
+    Outcome,
+    PlanSource,
+    PlanStatus,
+    SessionStatus,
+)
+from core.domain.exercise import ExerciseLibrary
+from core.domain.scenario import CheckinCondition, Plan, PlanTask, Scenario, Stage
 from core.scenarios.plan_engine import TrackerAction, decide
 from core.scenarios.snapshot import plan_from_snapshot, plan_to_snapshot, snapshot_text
 from core.services.dto import CheckinResult, PlanProgress, StageView
@@ -46,12 +55,14 @@ class TrackerService:
         sessions: SessionRepository,
         triage: TriageRepository,
         events: EventRepository,
+        library: ExerciseLibrary,
     ) -> None:
         self._plans = plans
         self._checkins = checkins
         self._sessions = sessions
         self._triage = triage
         self._events = events
+        self._library = library
 
     # --- выдача плана ---------------------------------------------------------
 
@@ -59,7 +70,7 @@ class TrackerService:
         self, session: Session, scenario: Scenario, plan_key: str
     ) -> tuple[RecoveryPlan, StageView]:
         plan_def = scenario.plans[plan_key]
-        snapshot = plan_to_snapshot(scenario, plan_def)
+        snapshot = plan_to_snapshot(scenario, plan_def, self._library)
         plan = await self._plans.create(session_id=session.id, plan_key=plan_key, snapshot=snapshot)
         session.status = SessionStatus.PLAN_ACTIVE
         await self._sessions.update(session)
@@ -71,6 +82,79 @@ class TrackerService:
                 "plan_key": plan_key,
                 "scenario_id": scenario.id,
                 "scenario_version": scenario.version,
+            },
+        )
+        return plan, self.stage_view(plan)
+
+    async def start_prescription_plan(
+        self,
+        session: Session,
+        scenario: Scenario,
+        *,
+        items: Sequence[str],
+        limits: Sequence[str] = (),
+        duration_days: int | None = None,
+    ) -> tuple[RecoveryPlan, StageView]:
+        """План из назначения специалиста: формулировки переносятся дословно.
+
+        Упражнения из нашей библиотеки сюда не подставляются — иначе бот подменил бы
+        назначенную нагрузку своими дозировками. Ограничения идут отдельными задачами,
+        чтобы пользователь видел их каждый день.
+        """
+        tasks = [PlanTask(key=f"rx_{index}", text=text) for index, text in enumerate(items, 1)]
+        tasks += [
+            PlanTask(key=f"limit_{index}", text=f"Ограничение: {text}")
+            for index, text in enumerate(limits, 1)
+        ]
+        tasks.append(
+            PlanTask(
+                key="morning_check",
+                text="Утром отметить боль (0–10), отёк и как даётся нагрузка",
+            )
+        )
+
+        stage = Stage(
+            key="prescribed",
+            title="Программа специалиста",
+            days=min(90, max(1, duration_days or 14)),
+            description=(
+                "Выполняем то, что назначил специалист, в назначенной дозировке. "
+                "Нагрузку я не меняю — изменения согласуй с ним."
+            ),
+            tasks=tuple(tasks),
+            advance_if=CheckinCondition(
+                feeling=(Feeling.BETTER,), consecutive=3, tasks_done_ratio_gte=0.7
+            ),
+            escalate_if=CheckinCondition(feeling=(Feeling.WORSE,), consecutive=2),
+        )
+        plan_def = Plan(
+            key="prescribed",
+            title="Восстановление по программе специалиста",
+            stages=(stage,),
+            completion_text=(
+                "Контрольный период по программе пройден. Это не допуск к тренировкам: "
+                "возврат к спорту оценивает специалист отдельно."
+            ),
+        )
+
+        snapshot = plan_to_snapshot(scenario, plan_def, self._library)
+        plan = await self._plans.create(
+            session_id=session.id, plan_key=plan_def.key, snapshot=snapshot
+        )
+        plan.source = PlanSource.PRESCRIPTION
+        await self._plans.update(plan)
+
+        session.status = SessionStatus.PLAN_ACTIVE
+        await self._sessions.update(session)
+        await self._events.add(
+            EventType.PLAN_STARTED,
+            user_id=session.user_id,
+            session_id=session.id,
+            payload={
+                "plan_key": plan_def.key,
+                "source": PlanSource.PRESCRIPTION.value,
+                "items": len(items),
+                "limits": len(limits),
             },
         )
         return plan, self.stage_view(plan)

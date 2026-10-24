@@ -11,7 +11,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from apps.bot.texts import FEELING_LABELS, SPORT_LABELS
 from core.domain.enums import Feeling, Sport
 from core.domain.scenario import Option, PlanTask
-from core.services.dto import ScenarioChoice
+from core.services.dto import DailyItem, DailyPlanView, ScenarioChoice
 
 
 class ConsentCB(CallbackData, prefix="consent"):
@@ -42,6 +42,29 @@ class CheckinCB(CallbackData, prefix="chk"):
 
 class ReminderCB(CallbackData, prefix="rem"):
     value: str  # HH:MM | skip
+
+
+class DayCB(CallbackData, prefix="day"):
+    action: str  # refresh | wellbeing
+
+
+class ItemCB(CallbackData, prefix="item"):
+    kind: str  # exercise | task | supplement
+    key: str
+    action: str  # open | done | partial | skip | comment
+
+
+class WellbeingCB(CallbackData, prefix="wb"):
+    field: str  # swelling | capacity
+    value: str
+
+
+class PrescriptionCB(CallbackData, prefix="rx"):
+    accept: bool
+
+
+class ReportCB(CallbackData, prefix="rep"):
+    fmt: str  # pdf | text
 
 
 class PainPointCB(CallbackData, prefix="pp"):
@@ -110,6 +133,106 @@ def specialist_kb(url: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[[InlineKeyboardButton(text=SPECIALIST_BUTTON, url=url)]]
     )
+
+
+def daily_kb(view: DailyPlanView) -> InlineKeyboardMarkup:
+    """По кнопке на каждый пункт: карточка открывается отдельным сообщением."""
+    from apps.bot.texts import (
+        DAILY_WELLBEING_BUTTON,
+        DAILY_WELLBEING_DONE_BUTTON,
+        ITEM_STATUS_ICONS,
+    )
+
+    builder = InlineKeyboardBuilder()
+    for index, item in enumerate(view.items, start=1):
+        icon = ITEM_STATUS_ICONS[item.status] if item.status else ITEM_STATUS_ICONS[None]
+        builder.button(
+            text=f"{icon} {index}. {item.title[:40]}",
+            callback_data=ItemCB(kind=item.kind.value, key=item.key, action="open"),
+        )
+    builder.button(
+        text=DAILY_WELLBEING_DONE_BUTTON if view.wellbeing_done else DAILY_WELLBEING_BUTTON,
+        callback_data=DayCB(action="wellbeing"),
+    )
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def item_kb(item: DailyItem) -> InlineKeyboardMarkup:
+    from apps.bot.texts import (
+        ITEM_COMMENT_BUTTON,
+        ITEM_DONE_BUTTON,
+        ITEM_PARTIAL_BUTTON,
+        ITEM_REFRESH_BUTTON,
+        ITEM_SKIP_BUTTON,
+    )
+
+    builder = InlineKeyboardBuilder()
+    for text, action in (
+        (ITEM_DONE_BUTTON, "done"),
+        (ITEM_PARTIAL_BUTTON, "partial"),
+        (ITEM_SKIP_BUTTON, "skip"),
+        (ITEM_COMMENT_BUTTON, "comment"),
+    ):
+        builder.button(
+            text=text,
+            callback_data=ItemCB(kind=item.kind.value, key=item.key, action=action),
+        )
+    builder.button(text=ITEM_REFRESH_BUTTON, callback_data=DayCB(action="refresh"))
+    builder.adjust(3, 1, 1)
+    return builder.as_markup()
+
+
+def prescription_kb() -> InlineKeyboardMarkup:
+    from apps.bot.texts import (
+        PRESCRIPTION_ACCEPT_BUTTON,
+        PRESCRIPTION_RETRY_BUTTON,
+    )
+
+    builder = InlineKeyboardBuilder()
+    builder.button(text=PRESCRIPTION_ACCEPT_BUTTON, callback_data=PrescriptionCB(accept=True))
+    builder.button(text=PRESCRIPTION_RETRY_BUTTON, callback_data=PrescriptionCB(accept=False))
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def report_kb() -> InlineKeyboardMarkup:
+    from apps.bot.texts import REPORT_PDF_BUTTON, REPORT_TEXT_BUTTON
+
+    builder = InlineKeyboardBuilder()
+    builder.button(text=REPORT_PDF_BUTTON, callback_data=ReportCB(fmt="pdf"))
+    builder.button(text=REPORT_TEXT_BUTTON, callback_data=ReportCB(fmt="text"))
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def pain_kb() -> InlineKeyboardMarkup:
+    """Боль 0–10: цифрами, чтобы запись была сравнимой день ко дню."""
+    builder = InlineKeyboardBuilder()
+    for value in range(11):
+        builder.button(text=str(value), callback_data=WellbeingCB(field="pain", value=str(value)))
+    builder.adjust(6, 5)
+    return builder.as_markup()
+
+
+def swelling_kb() -> InlineKeyboardMarkup:
+    from apps.bot.texts import SWELLING_LABELS
+
+    builder = InlineKeyboardBuilder()
+    for value, label in SWELLING_LABELS.items():
+        builder.button(text=label, callback_data=WellbeingCB(field="swelling", value=value.value))
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def capacity_kb() -> InlineKeyboardMarkup:
+    from apps.bot.texts import CAPACITY_LABELS
+
+    builder = InlineKeyboardBuilder()
+    for value, label in CAPACITY_LABELS.items():
+        builder.button(text=label, callback_data=WellbeingCB(field="capacity", value=value.value))
+    builder.adjust(1)
+    return builder.as_markup()
 
 
 def pain_point_kb() -> InlineKeyboardMarkup:

@@ -103,6 +103,8 @@ class Stage:
     title: str
     days: int
     tasks: tuple[PlanTask, ...]
+    #: id упражнений из библиотеки; сами карточки лежат в ExerciseLibrary
+    exercises: tuple[str, ...] = ()
     description: str | None = None
     advance_if: CheckinCondition = field(default_factory=CheckinCondition)
     escalate_if: CheckinCondition | None = None

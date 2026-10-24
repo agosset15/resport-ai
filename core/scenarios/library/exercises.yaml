@@ -1,0 +1,389 @@
+# ЧЕРНОВИК. Требует ревью профильного врача до беты — у каждой карточки
+# review_status: draft, пока врач не подтвердит содержание и дозировку.
+#
+# Бот не придумывает дозировки на ходу: он показывает то, что записано здесь.
+# Правка этого файла не меняет уже выданные планы — карточки вшиваются в снимок
+# плана в момент выдачи (core/scenarios/snapshot.py).
+#
+# Общие принципы содержания:
+#   - движения в комфортной амплитуде, без боли и без проверки «на сколько терпит»;
+#   - изометрия и амплитуда раньше, сила и прыжки позже;
+#   - нет оборудования, кроме того, что есть дома;
+#   - формулировки бытовым языком, без медицинского жаргона.
+
+version: 1
+
+exercises:
+
+# --- общее для всех областей ---------------------------------------------
+
+- id: calm_walk
+  title: Спокойная ходьба
+  instruction: |-
+    Ходи в обычном темпе столько, сколько получается без боли и без хромоты.
+    Появилась хромота — на сегодня хватит.
+  dosage: {duration_seconds: 600, note: 'можно разбить на несколько подходов за день'}
+  body_region: general
+  phase: acute
+  limits:
+  - Без боли и без хромоты
+  - Не наращивать время, если к утру стало хуже
+  review_status: draft
+  updated_at: '2026-10-24'
+
+- id: breathing_relax
+  title: Спокойное дыхание
+  instruction: |-
+    Сядь или лягь удобно. Вдох через нос на четыре счёта, выдох через рот на шесть.
+    Плечи расслаблены.
+  dosage: {duration_seconds: 180}
+  body_region: general
+  phase: acute
+  limits:
+  - Прекрати, если закружилась голова
+  review_status: draft
+  updated_at: '2026-10-24'
+
+# --- голеностоп и стопа ---------------------------------------------------
+
+- id: ankle_pumps
+  title: Движения стопой вверх-вниз
+  instruction: |-
+    Сядь или лягь, нога вытянута. Медленно тяни носок на себя, потом от себя.
+    Двигайся только в той амплитуде, где не больно.
+  dosage: {sets: 2, reps: 15}
+  body_region: ankle_foot
+  phase: acute
+  limits:
+  - Только безболезненная амплитуда
+  - Не помогать руками и не давить на стопу
+  review_status: draft
+  updated_at: '2026-10-24'
+
+- id: ankle_alphabet
+  title: Рисование алфавита стопой
+  instruction: |-
+    Нога на весу. Большим пальцем «рисуй» в воздухе буквы алфавита — движение идёт
+    из голеностопа, колено не помогает.
+  dosage: {note: 'один полный проход по алфавиту, 1–2 раза в день'}
+  body_region: ankle_foot
+  phase: acute
+  limits:
+  - Останови, если появилась боль
+  review_status: draft
+  updated_at: '2026-10-24'
+
+- id: ankle_isometric_outward
+  title: Изометрия стопы наружу
+  instruction: |-
+    Поставь стопу рядом с ножкой стула или у стены. Мягко давай стопой наружу,
+    как будто хочешь отодвинуть опору, но стопа не двигается. Держи и отпускай.
+  dosage: {sets: 3, reps: 8, note: 'держать 5 секунд, усилие примерно вполсилы'}
+  body_region: ankle_foot
+  phase: subacute
+  limits:
+  - Усилие вполсилы, не до боли
+  - Стопа остаётся на месте, движения нет
+  review_status: draft
+  updated_at: '2026-10-24'
+
+- id: calf_raises_double
+  title: Подъёмы на носки на двух ногах
+  instruction: |-
+    Встань у стены или спинки стула, держись руками. Медленно поднимись на носки
+    и так же медленно опустись. Вес распределён на обе ноги.
+  dosage: {sets: 2, reps: 12}
+  body_region: ankle_foot
+  phase: subacute
+  limits:
+  - Держись за опору
+  - Без боли; больно — уменьши амплитуду
+  review_status: draft
+  updated_at: '2026-10-24'
+
+- id: single_leg_balance
+  title: Стойка на одной ноге
+  instruction: |-
+    Встань на травмированную ногу рядом с опорой, вторую согни. Стой спокойно,
+    держась за опору настолько, насколько нужно.
+  dosage: {sets: 3, duration_seconds: 30}
+  body_region: ankle_foot
+  phase: subacute
+  limits:
+  - Рядом должна быть опора
+  - Не на мягкой или неустойчивой поверхности
+  review_status: draft
+  updated_at: '2026-10-24'
+
+- id: calf_raises_single
+  title: Подъёмы на носок на одной ноге
+  instruction: |-
+    Держась за опору, поднимись на носок только травмированной ногой и медленно
+    опустись.
+  dosage: {sets: 3, reps: 10}
+  body_region: ankle_foot
+  phase: return
+  limits:
+  - Только если на двух ногах получается без боли
+  - Держись за опору
+  review_status: draft
+  updated_at: '2026-10-24'
+
+# --- колено ---------------------------------------------------------------
+
+- id: quad_setting
+  title: Напряжение бедра лёжа
+  instruction: |-
+    Лягь, нога прямая. Напряги мышцу на передней поверхности бедра так, чтобы
+    колено мягко прижалось к полу, подержи и расслабь.
+  dosage: {sets: 3, reps: 10, note: 'держать 5 секунд'}
+  body_region: knee
+  phase: acute
+  limits:
+  - Без боли в колене
+  review_status: draft
+  updated_at: '2026-10-24'
+
+- id: heel_slides
+  title: Скольжение пяткой
+  instruction: |-
+    Лягь на спину, пятка на полу. Медленно подтягивай пятку к себе, сгибая колено
+    в той амплитуде, где не больно, и так же медленно выпрямляй.
+  dosage: {sets: 2, reps: 12}
+  body_region: knee
+  phase: acute
+  limits:
+  - Только безболезненная амплитуда
+  - Не доводить до упора через боль
+  review_status: draft
+  updated_at: '2026-10-24'
+
+- id: straight_leg_raise
+  title: Подъём прямой ноги
+  instruction: |-
+    Лягь на спину, травмированная нога прямая, вторая согнута. Напряги бедро
+    и подними прямую ногу на 20–30 см, медленно опусти.
+  dosage: {sets: 3, reps: 10}
+  body_region: knee
+  phase: subacute
+  limits:
+  - Колено остаётся прямым
+  - Без боли и без рывков
+  review_status: draft
+  updated_at: '2026-10-24'
+
+- id: wall_sit_short
+  title: Полуприсед у стены
+  instruction: |-
+    Прислонись спиной к стене, стопы на ширине плеч. Скользи вниз до небольшого
+    угла в коленях — не глубже, чем комфортно, — и держи.
+  dosage: {sets: 3, duration_seconds: 20}
+  body_region: knee
+  phase: subacute
+  limits:
+  - Неглубоко, колени не выходят за носки
+  - Больно под чашечкой — уменьши угол
+  review_status: draft
+  updated_at: '2026-10-24'
+
+- id: step_down_slow
+  title: Медленный спуск со ступеньки
+  instruction: |-
+    Встань на невысокую ступеньку травмированной ногой, держись за опору. Медленно
+    опускай вторую ногу к полу и возвращайся.
+  dosage: {sets: 3, reps: 8}
+  body_region: knee
+  phase: return
+  limits:
+  - Невысокая ступенька, рядом опора
+  - Без боли во время и к утру следующего дня
+  review_status: draft
+  updated_at: '2026-10-24'
+
+# --- передняя поверхность бедра ------------------------------------------
+
+- id: quad_isometric_seated
+  title: Напряжение бедра сидя
+  instruction: |-
+    Сядь на стул, нога выпрямлена вперёд, пятка на полу. Напряги переднюю
+    поверхность бедра, подержи, расслабь.
+  dosage: {sets: 3, reps: 10, note: 'держать 5 секунд, усилие вполсилы'}
+  body_region: thigh_front
+  phase: acute
+  limits:
+  - Усилие вполсилы, не до боли
+  review_status: draft
+  updated_at: '2026-10-24'
+
+- id: gentle_knee_bend_prone
+  title: Сгибание колена лёжа на животе
+  instruction: |-
+    Лягь на живот. Медленно сгибай колено, подтягивая пятку к себе в той
+    амплитуде, где нет боли и натяжения, и медленно опускай.
+  dosage: {sets: 2, reps: 12}
+  body_region: thigh_front
+  phase: subacute
+  limits:
+  - Без растягивающей боли спереди бедра
+  review_status: draft
+  updated_at: '2026-10-24'
+
+- id: mini_squat
+  title: Неглубокий присед
+  instruction: |-
+    Встань у опоры, стопы на ширине плеч. Присядь на небольшую глубину и вернись.
+    Вес на обе ноги.
+  dosage: {sets: 3, reps: 10}
+  body_region: thigh_front
+  phase: return
+  limits:
+  - Неглубоко, без боли
+  - Рядом опора
+  review_status: draft
+  updated_at: '2026-10-24'
+
+# --- задняя поверхность бедра --------------------------------------------
+
+- id: hamstring_isometric_heel_dig
+  title: Изометрия задней поверхности бедра
+  instruction: |-
+    Лягь на спину, колено слегка согнуто, пятка на полу. Мягко «вдавливай» пятку
+    в пол, не двигая ногой. Подержи и расслабь.
+  dosage: {sets: 3, reps: 8, note: 'держать 5 секунд, усилие вполсилы'}
+  body_region: thigh_back
+  phase: acute
+  limits:
+  - Усилие вполсилы
+  - Никакого растягивания на этом этапе
+  review_status: draft
+  updated_at: '2026-10-24'
+
+- id: glute_bridge
+  title: Подъём таза лёжа
+  instruction: |-
+    Лягь на спину, колени согнуты, стопы на полу. Подними таз, сжав ягодицы,
+    задержись на пару секунд и опусти.
+  dosage: {sets: 3, reps: 12}
+  body_region: thigh_back
+  phase: subacute
+  limits:
+  - Без боли сзади бедра
+  - Поясница не прогибается
+  review_status: draft
+  updated_at: '2026-10-24'
+
+- id: single_leg_bridge
+  title: Подъём таза на одной ноге
+  instruction: |-
+    То же, что подъём таза, но опора только на травмированную ногу, вторая
+    выпрямлена или подтянута к себе.
+  dosage: {sets: 3, reps: 8}
+  body_region: thigh_back
+  phase: return
+  limits:
+  - Только если на двух ногах получается без боли
+  review_status: draft
+  updated_at: '2026-10-24'
+
+- id: hamstring_gentle_reach
+  title: Мягкое вытяжение задней поверхности бедра
+  instruction: |-
+    Поставь пятку на невысокую опору, нога прямая. Наклоняйся вперёд от бедра
+    до первого ощущения натяжения — не дальше — и держи.
+  dosage: {sets: 2, duration_seconds: 20}
+  body_region: thigh_back
+  phase: return
+  limits:
+  - До первого натяжения, не до боли
+  - Не пружинить и не тянуть рывками
+  review_status: draft
+  updated_at: '2026-10-24'
+
+# --- пах и приводящие ----------------------------------------------------
+
+- id: adductor_squeeze
+  title: Сжимание мяча или подушки между коленями
+  instruction: |-
+    Лягь или сядь, между коленями подушка или мяч. Мягко сжимай её коленями,
+    подержи и расслабь.
+  dosage: {sets: 3, reps: 10, note: 'держать 5 секунд, усилие вполсилы'}
+  body_region: groin
+  phase: acute
+  equipment:
+  - подушка или мяч
+  limits:
+  - Усилие вполсилы, не до боли в паху
+  review_status: draft
+  updated_at: '2026-10-24'
+
+- id: adductor_squeeze_progress
+  title: Сжимание с прямыми ногами
+  instruction: |-
+    То же сжимание, но ноги почти прямые — так нагрузка на приводящие больше.
+  dosage: {sets: 3, reps: 10, note: 'держать 5 секунд'}
+  body_region: groin
+  phase: subacute
+  equipment:
+  - подушка или мяч
+  limits:
+  - Только если вариант с согнутыми коленями не вызывает боли
+  review_status: draft
+  updated_at: '2026-10-24'
+
+- id: side_lying_leg_raise
+  title: Подъём ноги лёжа на боку
+  instruction: |-
+    Лягь на бок на травмированную сторону, нижняя нога прямая. Подними её
+    на небольшую высоту и медленно опусти.
+  dosage: {sets: 3, reps: 10}
+  body_region: groin
+  phase: return
+  limits:
+  - Небольшая амплитуда, без боли
+  review_status: draft
+  updated_at: '2026-10-24'
+
+# --- кисть и палец --------------------------------------------------------
+
+- id: finger_gentle_rom
+  title: Мягкие движения пальцем
+  instruction: |-
+    Медленно сгибай и разгибай палец в той амплитуде, где не больно.
+    Другой рукой не помогай и не доводи через боль.
+  dosage: {sets: 3, reps: 10}
+  body_region: hand_finger
+  phase: acute
+  limits:
+  - Только безболезненная амплитуда
+  - Не разгибать палец силой
+  review_status: draft
+  updated_at: '2026-10-24'
+
+- id: tendon_glide
+  title: Последовательное сгибание пальцев
+  instruction: |-
+    Из прямой ладони согни пальцы в кулак по частям: сначала верхние суставы,
+    потом средние, потом полный кулак. Медленно вернись обратно.
+  dosage: {sets: 2, reps: 8}
+  body_region: hand_finger
+  phase: subacute
+  limits:
+  - Без боли
+  review_status: draft
+  updated_at: '2026-10-24'
+
+- id: soft_grip_squeeze
+  title: Мягкое сжимание в кулак
+  instruction: |-
+    Сжимай в руке что-то мягкое — поролоновый мяч или скомканное полотенце —
+    примерно вполсилы, подержи и отпусти.
+  dosage: {sets: 3, reps: 10, note: 'держать 3 секунды'}
+  body_region: hand_finger
+  phase: return
+  equipment:
+  - мягкий мяч или полотенце
+  limits:
+  - Усилие вполсилы
+  - Больно — уменьши усилие, а не продолжай через боль
+  review_status: draft
+  updated_at: '2026-10-24'

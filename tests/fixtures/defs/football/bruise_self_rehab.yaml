@@ -64,6 +64,7 @@ plans:
         tasks:
           - {key: comfort_activity, text: "Бытовая активность в комфортных пределах"}
           - {key: morning_check, text: "Утром отметить боль и отёк"}
+        exercises: [quad_isometric_seated, calm_walk]
         advance_if: {feeling: better, consecutive: 2}
         escalate_if: {feeling: worse, consecutive: 2}
 

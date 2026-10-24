@@ -10,10 +10,13 @@ from uuid import UUID
 from core.domain.entities import (
     Answer,
     Checkin,
+    PlanItemLog,
+    PlanRevision,
     RecoveryPlan,
     Session,
     TriageResult,
     User,
+    WellbeingLog,
 )
 from core.domain.enums import (
     EventType,
@@ -97,6 +100,34 @@ class CheckinRepository(Protocol):
     async def count_for_stage(self, plan_id: UUID, stage_index: int) -> int: ...
 
     async def last_feelings(self, plan_id: UUID, limit: int) -> Sequence[Feeling]: ...
+
+
+class PlanItemRepository(Protocol):
+    async def upsert(self, log: PlanItemLog) -> None: ...
+
+    async def for_date(self, plan_id: UUID, day: date) -> Sequence[PlanItemLog]: ...
+
+    async def for_plan(self, plan_id: UUID) -> Sequence[PlanItemLog]: ...
+
+    async def for_period(self, plan_id: UUID, start: date, end: date) -> Sequence[PlanItemLog]: ...
+
+
+class WellbeingRepository(Protocol):
+    async def upsert(self, log: WellbeingLog) -> None: ...
+
+    async def get_for_date(self, plan_id: UUID, day: date) -> WellbeingLog | None: ...
+
+    async def for_plan(self, plan_id: UUID) -> Sequence[WellbeingLog]: ...
+
+    async def for_period(self, plan_id: UUID, start: date, end: date) -> Sequence[WellbeingLog]: ...
+
+
+class PlanRevisionRepository(Protocol):
+    async def add(
+        self, plan_id: UUID, version: int, snapshot: dict[str, Any], reason: str
+    ) -> None: ...
+
+    async def for_plan(self, plan_id: UUID) -> Sequence[PlanRevision]: ...
 
 
 class LlmCallRepository(Protocol):

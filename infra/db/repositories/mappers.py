@@ -5,18 +5,24 @@ from __future__ import annotations
 from core.domain.entities import (
     Answer,
     Checkin,
+    PlanItemLog,
+    PlanRevision,
     RecoveryPlan,
     Session,
     TriageResult,
     User,
+    WellbeingLog,
 )
 from infra.db.models import (
     CheckinModel,
+    PlanItemLogModel,
+    PlanRevisionModel,
     RecoveryPlanModel,
     SessionAnswerModel,
     SessionModel,
     TriageResultModel,
     UserModel,
+    WellbeingLogModel,
 )
 
 
@@ -79,10 +85,49 @@ def to_plan(model: RecoveryPlanModel) -> RecoveryPlan:
         plan_key=model.plan_key,
         plan_snapshot=dict(model.plan_snapshot or {}),
         current_stage=model.current_stage,
+        source=model.source,
+        version=model.version,
         status=model.status,
         stage_started_at=model.stage_started_at,
         started_at=model.started_at,
         finished_at=model.finished_at,
+    )
+
+
+def to_plan_item_log(model: PlanItemLogModel) -> PlanItemLog:
+    return PlanItemLog(
+        id=model.id,
+        plan_id=model.plan_id,
+        date=model.date,
+        item_kind=model.item_kind,
+        item_key=model.item_key,
+        status=model.status,
+        comment=model.comment,
+        created_at=model.created_at,
+    )
+
+
+def to_wellbeing_log(model: WellbeingLogModel) -> WellbeingLog:
+    return WellbeingLog(
+        id=model.id,
+        plan_id=model.plan_id,
+        date=model.date,
+        pain_0_10=model.pain_0_10,
+        swelling=model.swelling,
+        daily_capacity=model.daily_capacity,
+        note=model.note,
+        created_at=model.created_at,
+    )
+
+
+def to_plan_revision(model: PlanRevisionModel) -> PlanRevision:
+    return PlanRevision(
+        id=model.id,
+        plan_id=model.plan_id,
+        version=model.version,
+        snapshot=dict(model.snapshot or {}),
+        reason=model.reason,
+        created_at=model.created_at,
     )
 
 

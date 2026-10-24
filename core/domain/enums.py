@@ -35,6 +35,44 @@ class Feeling(StrEnum):
     WORSE = "worse"
 
 
+class PlanSource(StrEnum):
+    """Откуда взялся план. Нагрузку из назначения бот не меняет сам."""
+
+    SCENARIO = "scenario"
+    PRESCRIPTION = "prescription"
+
+
+class ItemKind(StrEnum):
+    """Что отмечает пользователь в плане на сегодня."""
+
+    EXERCISE = "exercise"
+    TASK = "task"
+    SUPPLEMENT = "supplement"
+
+
+class ItemStatus(StrEnum):
+    """Частичное выполнение считается отдельно и в зачёт программы не идёт."""
+
+    DONE = "done"
+    PARTIAL = "partial"
+    SKIPPED = "skipped"
+
+
+class Swelling(StrEnum):
+    NONE = "none"
+    MILD = "mild"
+    MODERATE = "moderate"
+    SEVERE = "severe"
+
+
+class DailyCapacity(StrEnum):
+    """Что получается в быту — это и есть «повседневные возможности» из ТЗ."""
+
+    FULL = "full"
+    LIMITED = "limited"
+    MINIMAL = "minimal"
+
+
 class AnswerSource(StrEnum):
     BUTTON = "button"
     LLM = "llm"
@@ -44,6 +82,7 @@ class AnswerSource(StrEnum):
 class LlmTask(StrEnum):
     CLASSIFY_COMPLAINT = "classify_complaint"
     CLASSIFY_BODY_PART = "classify_body_part"
+    PARSE_PRESCRIPTION = "parse_prescription"
     NORMALIZE_ANSWER = "normalize_answer"
     EXPLAIN_STEP = "explain_step"
 
@@ -61,9 +100,15 @@ class EventType(StrEnum):
     RED_FLAG_TRIGGERED = "red_flag_triggered"
     TRIAGE_COMPLETED = "triage_completed"
     PLAN_STARTED = "plan_started"
+    PRESCRIPTION_PARSED = "prescription_parsed"
     REMINDER_TIME_SET = "reminder_time_set"
     REMINDER_SENT = "reminder_sent"
     CHECKIN_SUBMITTED = "checkin_submitted"
+    PLAN_ITEM_MARKED = "plan_item_marked"
+    WELLBEING_LOGGED = "wellbeing_logged"
+    PLAN_REVISED = "plan_revised"
+    PROGRESS_VIEWED = "progress_viewed"
+    REPORT_BUILT = "report_built"
     STAGE_ADVANCED = "stage_advanced"
     PLAN_ESCALATED = "plan_escalated"
     PLAN_COMPLETED = "plan_completed"

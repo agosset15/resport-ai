@@ -180,6 +180,11 @@
             }
           }
         },
+        "exercises": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+          "description": "id упражнений из core/scenarios/library/exercises.yaml"
+        },
         "advance_if": {"$ref": "#/$defs/checkin_condition"},
         "escalate_if": {"$ref": "#/$defs/checkin_condition"}
       }

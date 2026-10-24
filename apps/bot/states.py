@@ -13,6 +13,21 @@ class TriageFlow(StatesGroup):
     waiting_self_rehab_consent = State()
 
 
+class PrescriptionFlow(StatesGroup):
+    """Ввод назначения специалиста и подтверждение разбора."""
+
+    waiting_text = State()
+    confirming = State()
+
+
+class DiaryFlow(StatesGroup):
+    """Свободный ввод для плана на сегодня и дневника."""
+
+    waiting_item_comment = State()
+    waiting_pain = State()
+    waiting_wellbeing_note = State()
+
+
 class TrackerFlow(StatesGroup):
     waiting_reminder_time = State()
     collecting_tasks = State()

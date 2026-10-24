@@ -20,6 +20,7 @@ from core.domain.enums import (
 )
 from core.domain.scenario import ScenarioRegistry
 from core.llm.runner import LlmRunner
+from core.scenarios.exercises import load_library
 from core.scenarios.plan_engine import TrackerAction
 from core.services.dto import OutcomeView, QuestionView
 from core.services.tracker import TrackerService
@@ -80,6 +81,7 @@ class App:
             sessions=self.sessions_repo,
             triage=self.triage_repo,
             events=self.events,
+            library=load_library(),
         )
 
 

@@ -101,7 +101,12 @@ class LlmSettings(_Base):
     #: а не все сценарии вида спорта: «не понял тебя» ощущается хуже всего.
     classify_suggest_threshold: float = 0.35
     enabled_tasks: Annotated[list[str], NoDecode] = Field(
-        default_factory=lambda: ["classify_complaint", "normalize_answer", "explain_step"]
+        default_factory=lambda: [
+            "classify_complaint",
+            "normalize_answer",
+            "explain_step",
+            "parse_prescription",
+        ]
     )
 
     @field_validator("enabled_tasks", mode="before")
@@ -122,6 +127,10 @@ class ContentSettings(_Base):
     support_contact: str = "@resport_support"
     scenarios_dir: Path = PROJECT_ROOT / "core" / "scenarios" / "defs"
     images_dir: Path = PROJECT_ROOT / "content" / "images"
+    #: TTF с кириллицей для PDF-отчёта. Пусто — ищем в системных путях,
+    #: не нашли — отчёт уходит текстом (см. infra/report/pdf.py).
+    report_font_path: Path | None = None
+    report_period_days: int = 14
     default_reminder_time: str = "19:00"
     default_timezone: str = "Europe/Moscow"
 
