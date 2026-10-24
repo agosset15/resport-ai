@@ -71,6 +71,15 @@ class TriageDecision:
     def is_referral(self) -> bool:
         return self.outcome is Outcome.REFER_SPECIALIST
 
+    @property
+    def is_self_rehab(self) -> bool:
+        return self.outcome is Outcome.SELF_REHAB
+
+    @property
+    def starts_plan(self) -> bool:
+        """И recovery_plan, и self_rehab выдают план — различается только преамбула."""
+        return self.outcome in (Outcome.RECOVERY_PLAN, Outcome.SELF_REHAB)
+
 
 @dataclass(frozen=True, slots=True)
 class AskQuestion:

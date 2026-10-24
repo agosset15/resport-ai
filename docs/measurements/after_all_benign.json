@@ -1,0 +1,272 @@
+[
+  {
+    "scenario_id": "basketball.adductor_strain",
+    "declared_questions": 25,
+    "walks": 1500,
+    "policy": "benign",
+    "outcomes": {
+      "self_rehab": 1.0
+    },
+    "tiers": {
+      "default": 1.0
+    },
+    "reasons": {
+      "default_self_rehab": 1.0
+    },
+    "asked_mean": 18,
+    "asked_median": 18,
+    "asked_max": 18
+  },
+  {
+    "scenario_id": "basketball.ankle_sprain",
+    "declared_questions": 24,
+    "walks": 1500,
+    "policy": "benign",
+    "outcomes": {
+      "self_rehab": 1.0
+    },
+    "tiers": {
+      "default": 1.0
+    },
+    "reasons": {
+      "default_self_rehab": 1.0
+    },
+    "asked_mean": 17,
+    "asked_median": 17,
+    "asked_max": 17
+  },
+  {
+    "scenario_id": "basketball.finger_sprain",
+    "declared_questions": 24,
+    "walks": 1500,
+    "policy": "benign",
+    "outcomes": {
+      "self_rehab": 1.0
+    },
+    "tiers": {
+      "default": 1.0
+    },
+    "reasons": {
+      "default_self_rehab": 1.0
+    },
+    "asked_mean": 18,
+    "asked_median": 18,
+    "asked_max": 18
+  },
+  {
+    "scenario_id": "basketball.hamstring_strain",
+    "declared_questions": 24,
+    "walks": 1500,
+    "policy": "benign",
+    "outcomes": {
+      "self_rehab": 1.0
+    },
+    "tiers": {
+      "default": 1.0
+    },
+    "reasons": {
+      "default_self_rehab": 1.0
+    },
+    "asked_mean": 16,
+    "asked_median": 16,
+    "asked_max": 16
+  },
+  {
+    "scenario_id": "basketball.patellar_pain",
+    "declared_questions": 7,
+    "walks": 1500,
+    "policy": "benign",
+    "outcomes": {
+      "recovery_plan": 1.0
+    },
+    "tiers": {
+      "overload": 1.0
+    },
+    "reasons": {
+      "overload_pattern": 1.0
+    },
+    "asked_mean": 7,
+    "asked_median": 7,
+    "asked_max": 7
+  },
+  {
+    "scenario_id": "basketball.patellar_tendinopathy",
+    "declared_questions": 24,
+    "walks": 1500,
+    "policy": "benign",
+    "outcomes": {
+      "self_rehab": 1.0
+    },
+    "tiers": {
+      "watch": 1.0
+    },
+    "reasons": {
+      "watch_pt_progression": 1.0
+    },
+    "asked_mean": 16,
+    "asked_median": 16,
+    "asked_max": 16
+  },
+  {
+    "scenario_id": "basketball.patellofemoral_pain",
+    "declared_questions": 24,
+    "walks": 1500,
+    "policy": "benign",
+    "outcomes": {
+      "self_rehab": 1.0
+    },
+    "tiers": {
+      "default": 1.0
+    },
+    "reasons": {
+      "default_self_rehab": 1.0
+    },
+    "asked_mean": 17,
+    "asked_median": 17,
+    "asked_max": 17
+  },
+  {
+    "scenario_id": "basketball.quadriceps_strain",
+    "declared_questions": 25,
+    "walks": 1500,
+    "policy": "benign",
+    "outcomes": {
+      "self_rehab": 1.0
+    },
+    "tiers": {
+      "default": 1.0
+    },
+    "reasons": {
+      "default_self_rehab": 1.0
+    },
+    "asked_mean": 17,
+    "asked_median": 17,
+    "asked_max": 17
+  },
+  {
+    "scenario_id": "football.adductor_strain",
+    "declared_questions": 25,
+    "walks": 1500,
+    "policy": "benign",
+    "outcomes": {
+      "self_rehab": 1.0
+    },
+    "tiers": {
+      "default": 1.0
+    },
+    "reasons": {
+      "default_self_rehab": 1.0
+    },
+    "asked_mean": 18,
+    "asked_median": 18,
+    "asked_max": 18
+  },
+  {
+    "scenario_id": "football.ankle_sprain",
+    "declared_questions": 24,
+    "walks": 1500,
+    "policy": "benign",
+    "outcomes": {
+      "self_rehab": 1.0
+    },
+    "tiers": {
+      "default": 1.0
+    },
+    "reasons": {
+      "default_self_rehab": 1.0
+    },
+    "asked_mean": 17,
+    "asked_median": 17,
+    "asked_max": 17
+  },
+  {
+    "scenario_id": "football.finger_sprain",
+    "declared_questions": 24,
+    "walks": 1500,
+    "policy": "benign",
+    "outcomes": {
+      "self_rehab": 1.0
+    },
+    "tiers": {
+      "default": 1.0
+    },
+    "reasons": {
+      "default_self_rehab": 1.0
+    },
+    "asked_mean": 18,
+    "asked_median": 18,
+    "asked_max": 18
+  },
+  {
+    "scenario_id": "football.hamstring_strain",
+    "declared_questions": 24,
+    "walks": 1500,
+    "policy": "benign",
+    "outcomes": {
+      "self_rehab": 1.0
+    },
+    "tiers": {
+      "default": 1.0
+    },
+    "reasons": {
+      "default_self_rehab": 1.0
+    },
+    "asked_mean": 16,
+    "asked_median": 16,
+    "asked_max": 16
+  },
+  {
+    "scenario_id": "football.patellar_tendinopathy",
+    "declared_questions": 24,
+    "walks": 1500,
+    "policy": "benign",
+    "outcomes": {
+      "self_rehab": 1.0
+    },
+    "tiers": {
+      "watch": 1.0
+    },
+    "reasons": {
+      "watch_pt_progression": 1.0
+    },
+    "asked_mean": 16,
+    "asked_median": 16,
+    "asked_max": 16
+  },
+  {
+    "scenario_id": "football.patellofemoral_pain",
+    "declared_questions": 24,
+    "walks": 1500,
+    "policy": "benign",
+    "outcomes": {
+      "self_rehab": 1.0
+    },
+    "tiers": {
+      "default": 1.0
+    },
+    "reasons": {
+      "default_self_rehab": 1.0
+    },
+    "asked_mean": 17,
+    "asked_median": 17,
+    "asked_max": 17
+  },
+  {
+    "scenario_id": "football.quadriceps_strain",
+    "declared_questions": 25,
+    "walks": 1500,
+    "policy": "benign",
+    "outcomes": {
+      "self_rehab": 1.0
+    },
+    "tiers": {
+      "default": 1.0
+    },
+    "reasons": {
+      "default_self_rehab": 1.0
+    },
+    "asked_mean": 17,
+    "asked_median": 17,
+    "asked_max": 17
+  }
+]

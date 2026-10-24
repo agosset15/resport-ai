@@ -1,0 +1,93 @@
+# Фикстура для логики исхода self_rehab. Медицинским содержанием не является:
+# нужна, чтобы покрыть тестами гейт дисклеймера и выдачу плана самостоятельного
+# восстановления, не трогая две замороженные фикстуры.
+id: football.bruise
+version: 1
+sport: football
+title: "Ушиб"
+summary: "Лёгкий ушиб без признаков серьёзной травмы"
+body_region: thigh_front
+pain_map:
+  image: thigh_front
+  caption: "Передняя поверхность бедра: отметь, где болит."
+
+entry_hints:
+  - "ушиб"
+  - "забил"
+  - "ударился"
+
+labels:
+  present: "Да"
+  absent: "Нет"
+  growing: "Растёт"
+  stable: "Не меняется"
+  shrinking: "Уменьшается"
+
+questions:
+  - key: q_deformity
+    text: "Есть деформация, онемение или открытая рана?"
+    options: [present, absent]
+
+  - key: q_swelling
+    text: "Что с отёком?"
+    options: [growing, stable, shrinking]
+
+red_flags:
+  - id: rf_deformity
+    question: q_deformity
+    when: {equals: present}
+    outcome: refer_specialist
+    reason: "Деформация, онемение или открытая рана — нужен осмотр"
+
+routing:
+  - when: {q_swelling: growing}
+    outcome: refer_specialist
+    reason_code: today_growing_swelling
+  - when: {q_swelling: stable}
+    outcome: self_rehab
+    plan: bruise_guarded
+    reason_code: watch_swelling
+  - default:
+    outcome: self_rehab
+    plan: bruise_basic
+    reason_code: default_self_rehab
+
+plans:
+  bruise_basic:
+    title: "Самостоятельное восстановление"
+    completion_text: |
+      Программа пройдена. Это не вывод о полном выздоровлении и не допуск к тренировкам.
+    stages:
+      - key: relief
+        title: "Снять нагрузку"
+        days: 3
+        tasks:
+          - {key: comfort_activity, text: "Бытовая активность в комфортных пределах"}
+          - {key: morning_check, text: "Утром отметить боль и отёк"}
+        advance_if: {feeling: better, consecutive: 2}
+        escalate_if: {feeling: worse, consecutive: 2}
+
+  bruise_guarded:
+    title: "Самостоятельное восстановление под наблюдением"
+    completion_text: |
+      Период наблюдения пройден. Перед возвратом к спорту покажись специалисту.
+    stages:
+      - key: guarded_watch
+        title: "Осторожное наблюдение"
+        days: 7
+        tasks:
+          - {key: comfort_activity, text: "Только бытовая активность"}
+          - {key: morning_check, text: "Утром отметить боль и отёк"}
+        advance_if: {feeling: better, consecutive: 3}
+        escalate_if: {feeling: [same, worse], consecutive: 2}
+
+texts:
+  refer_specialist: |
+    По твоим ответам нужен очный осмотр. Это не диагноз.
+  recovery_plan_intro: |
+    Предлагаю план восстановления: каждый день отмечаешь задачи и самочувствие.
+  self_rehab_intro: |
+    Тревожных признаков нет. Это не диагноз и не допуск к тренировкам.
+    Гарантий я не даю: травму я не осматривал.
+  escalation: |
+    Самочувствие не улучшается — дальше по плану не идём, нужен очный осмотр.

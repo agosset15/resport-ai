@@ -1,0 +1,398 @@
+[
+  {
+    "scenario_id": "basketball.adductor_strain",
+    "declared_questions": 25,
+    "walks": 3000,
+    "policy": "unknown_heavy",
+    "outcomes": {
+      "refer_specialist": 1.0
+    },
+    "tiers": {
+      "unclear": 1.0
+    },
+    "reasons": {
+      "unclear_g_age": 0.3,
+      "unclear_g_trend": 0.206,
+      "unclear_g_deformity": 0.14566666666666667,
+      "unclear_g_circulation": 0.10466666666666667,
+      "unclear_g_pain_swelling": 0.06533333333333333,
+      "unclear_g_hot_joint": 0.056,
+      "unclear_g_prior_eval": 0.04066666666666666,
+      "unclear_g_dvt": 0.03933333333333333,
+      "unclear_g_rest_pain": 0.02666666666666667,
+      "unclear_g_medical": 0.015666666666666666
+    },
+    "asked_mean": 23,
+    "asked_median": 23,
+    "asked_max": 23
+  },
+  {
+    "scenario_id": "basketball.ankle_sprain",
+    "declared_questions": 24,
+    "walks": 3000,
+    "policy": "unknown_heavy",
+    "outcomes": {
+      "refer_specialist": 1.0
+    },
+    "tiers": {
+      "unclear": 1.0
+    },
+    "reasons": {
+      "unclear_g_age": 0.298,
+      "unclear_g_trend": 0.21266666666666667,
+      "unclear_g_deformity": 0.146,
+      "unclear_g_circulation": 0.1,
+      "unclear_g_pain_swelling": 0.07466666666666667,
+      "unclear_g_hot_joint": 0.04733333333333333,
+      "unclear_g_prior_eval": 0.04566666666666667,
+      "unclear_g_dvt": 0.03266666666666666,
+      "unclear_g_rest_pain": 0.025,
+      "unclear_g_medical": 0.018
+    },
+    "asked_mean": 22,
+    "asked_median": 22,
+    "asked_max": 22
+  },
+  {
+    "scenario_id": "basketball.finger_sprain",
+    "declared_questions": 25,
+    "walks": 3000,
+    "policy": "unknown_heavy",
+    "outcomes": {
+      "refer_specialist": 1.0
+    },
+    "tiers": {
+      "unclear": 1.0
+    },
+    "reasons": {
+      "unclear_g_age": 0.298,
+      "unclear_g_trend": 0.21266666666666667,
+      "unclear_g_deformity": 0.146,
+      "unclear_g_circulation": 0.1,
+      "unclear_g_pain_swelling": 0.07466666666666667,
+      "unclear_g_hot_joint": 0.04733333333333333,
+      "unclear_g_prior_eval": 0.04566666666666667,
+      "unclear_g_dvt": 0.03266666666666666,
+      "unclear_g_rest_pain": 0.025,
+      "unclear_g_medical": 0.018
+    },
+    "asked_mean": 22,
+    "asked_median": 22,
+    "asked_max": 22
+  },
+  {
+    "scenario_id": "basketball.hamstring_strain",
+    "declared_questions": 24,
+    "walks": 3000,
+    "policy": "unknown_heavy",
+    "outcomes": {
+      "refer_specialist": 1.0
+    },
+    "tiers": {
+      "unclear": 1.0
+    },
+    "reasons": {
+      "unclear_g_age": 0.30333333333333334,
+      "unclear_g_trend": 0.20466666666666666,
+      "unclear_g_deformity": 0.14866666666666667,
+      "unclear_g_circulation": 0.10166666666666667,
+      "unclear_g_pain_swelling": 0.07266666666666667,
+      "unclear_g_hot_joint": 0.052333333333333336,
+      "unclear_g_prior_eval": 0.04,
+      "unclear_g_dvt": 0.035,
+      "unclear_g_rest_pain": 0.02666666666666667,
+      "unclear_g_medical": 0.015
+    },
+    "asked_mean": 21,
+    "asked_median": 21,
+    "asked_max": 21
+  },
+  {
+    "scenario_id": "basketball.patellar_pain",
+    "declared_questions": 7,
+    "walks": 3000,
+    "policy": "unknown_heavy",
+    "outcomes": {
+      "refer_specialist": 1.0
+    },
+    "tiers": {
+      "rf_emergency": 1.0
+    },
+    "reasons": {
+      "rf_constant_pain": 1.0
+    },
+    "asked_mean": 7,
+    "asked_median": 7,
+    "asked_max": 7
+  },
+  {
+    "scenario_id": "basketball.patellar_tendinopathy",
+    "declared_questions": 24,
+    "walks": 3000,
+    "policy": "unknown_heavy",
+    "outcomes": {
+      "refer_specialist": 1.0
+    },
+    "tiers": {
+      "unclear": 1.0
+    },
+    "reasons": {
+      "unclear_g_age": 0.30333333333333334,
+      "unclear_g_trend": 0.20466666666666666,
+      "unclear_g_deformity": 0.14866666666666667,
+      "unclear_g_circulation": 0.10166666666666667,
+      "unclear_g_pain_swelling": 0.07266666666666667,
+      "unclear_g_hot_joint": 0.052333333333333336,
+      "unclear_g_prior_eval": 0.04,
+      "unclear_g_dvt": 0.035,
+      "unclear_g_rest_pain": 0.02666666666666667,
+      "unclear_g_medical": 0.015
+    },
+    "asked_mean": 21,
+    "asked_median": 21,
+    "asked_max": 21
+  },
+  {
+    "scenario_id": "basketball.patellofemoral_pain",
+    "declared_questions": 24,
+    "walks": 3000,
+    "policy": "unknown_heavy",
+    "outcomes": {
+      "refer_specialist": 1.0
+    },
+    "tiers": {
+      "unclear": 1.0
+    },
+    "reasons": {
+      "unclear_g_age": 0.298,
+      "unclear_g_trend": 0.21266666666666667,
+      "unclear_g_deformity": 0.146,
+      "unclear_g_circulation": 0.1,
+      "unclear_g_pain_swelling": 0.07466666666666667,
+      "unclear_g_hot_joint": 0.04733333333333333,
+      "unclear_g_prior_eval": 0.04566666666666667,
+      "unclear_g_dvt": 0.03266666666666666,
+      "unclear_g_rest_pain": 0.025,
+      "unclear_g_medical": 0.018
+    },
+    "asked_mean": 22,
+    "asked_median": 22,
+    "asked_max": 22
+  },
+  {
+    "scenario_id": "basketball.quadriceps_strain",
+    "declared_questions": 25,
+    "walks": 3000,
+    "policy": "unknown_heavy",
+    "outcomes": {
+      "refer_specialist": 1.0
+    },
+    "tiers": {
+      "unclear": 1.0
+    },
+    "reasons": {
+      "unclear_g_age": 0.298,
+      "unclear_g_trend": 0.21266666666666667,
+      "unclear_g_deformity": 0.146,
+      "unclear_g_circulation": 0.1,
+      "unclear_g_pain_swelling": 0.07466666666666667,
+      "unclear_g_hot_joint": 0.04733333333333333,
+      "unclear_g_prior_eval": 0.04566666666666667,
+      "unclear_g_dvt": 0.03266666666666666,
+      "unclear_g_rest_pain": 0.025,
+      "unclear_g_medical": 0.018
+    },
+    "asked_mean": 22,
+    "asked_median": 22,
+    "asked_max": 22
+  },
+  {
+    "scenario_id": "football.adductor_strain",
+    "declared_questions": 25,
+    "walks": 3000,
+    "policy": "unknown_heavy",
+    "outcomes": {
+      "refer_specialist": 1.0
+    },
+    "tiers": {
+      "unclear": 1.0
+    },
+    "reasons": {
+      "unclear_g_age": 0.3,
+      "unclear_g_trend": 0.206,
+      "unclear_g_deformity": 0.14566666666666667,
+      "unclear_g_circulation": 0.10466666666666667,
+      "unclear_g_pain_swelling": 0.06533333333333333,
+      "unclear_g_hot_joint": 0.056,
+      "unclear_g_prior_eval": 0.04066666666666666,
+      "unclear_g_dvt": 0.03933333333333333,
+      "unclear_g_rest_pain": 0.02666666666666667,
+      "unclear_g_medical": 0.015666666666666666
+    },
+    "asked_mean": 23,
+    "asked_median": 23,
+    "asked_max": 23
+  },
+  {
+    "scenario_id": "football.ankle_sprain",
+    "declared_questions": 24,
+    "walks": 3000,
+    "policy": "unknown_heavy",
+    "outcomes": {
+      "refer_specialist": 1.0
+    },
+    "tiers": {
+      "unclear": 1.0
+    },
+    "reasons": {
+      "unclear_g_age": 0.298,
+      "unclear_g_trend": 0.21266666666666667,
+      "unclear_g_deformity": 0.146,
+      "unclear_g_circulation": 0.1,
+      "unclear_g_pain_swelling": 0.07466666666666667,
+      "unclear_g_hot_joint": 0.04733333333333333,
+      "unclear_g_prior_eval": 0.04566666666666667,
+      "unclear_g_dvt": 0.03266666666666666,
+      "unclear_g_rest_pain": 0.025,
+      "unclear_g_medical": 0.018
+    },
+    "asked_mean": 22,
+    "asked_median": 22,
+    "asked_max": 22
+  },
+  {
+    "scenario_id": "football.finger_sprain",
+    "declared_questions": 25,
+    "walks": 3000,
+    "policy": "unknown_heavy",
+    "outcomes": {
+      "refer_specialist": 1.0
+    },
+    "tiers": {
+      "unclear": 1.0
+    },
+    "reasons": {
+      "unclear_g_age": 0.298,
+      "unclear_g_trend": 0.21266666666666667,
+      "unclear_g_deformity": 0.146,
+      "unclear_g_circulation": 0.1,
+      "unclear_g_pain_swelling": 0.07466666666666667,
+      "unclear_g_hot_joint": 0.04733333333333333,
+      "unclear_g_prior_eval": 0.04566666666666667,
+      "unclear_g_dvt": 0.03266666666666666,
+      "unclear_g_rest_pain": 0.025,
+      "unclear_g_medical": 0.018
+    },
+    "asked_mean": 22,
+    "asked_median": 22,
+    "asked_max": 22
+  },
+  {
+    "scenario_id": "football.hamstring_strain",
+    "declared_questions": 24,
+    "walks": 3000,
+    "policy": "unknown_heavy",
+    "outcomes": {
+      "refer_specialist": 1.0
+    },
+    "tiers": {
+      "unclear": 1.0
+    },
+    "reasons": {
+      "unclear_g_age": 0.30333333333333334,
+      "unclear_g_trend": 0.20466666666666666,
+      "unclear_g_deformity": 0.14866666666666667,
+      "unclear_g_circulation": 0.10166666666666667,
+      "unclear_g_pain_swelling": 0.07266666666666667,
+      "unclear_g_hot_joint": 0.052333333333333336,
+      "unclear_g_prior_eval": 0.04,
+      "unclear_g_dvt": 0.035,
+      "unclear_g_rest_pain": 0.02666666666666667,
+      "unclear_g_medical": 0.015
+    },
+    "asked_mean": 21,
+    "asked_median": 21,
+    "asked_max": 21
+  },
+  {
+    "scenario_id": "football.patellar_tendinopathy",
+    "declared_questions": 24,
+    "walks": 3000,
+    "policy": "unknown_heavy",
+    "outcomes": {
+      "refer_specialist": 1.0
+    },
+    "tiers": {
+      "unclear": 1.0
+    },
+    "reasons": {
+      "unclear_g_age": 0.30333333333333334,
+      "unclear_g_trend": 0.20466666666666666,
+      "unclear_g_deformity": 0.14866666666666667,
+      "unclear_g_circulation": 0.10166666666666667,
+      "unclear_g_pain_swelling": 0.07266666666666667,
+      "unclear_g_hot_joint": 0.052333333333333336,
+      "unclear_g_prior_eval": 0.04,
+      "unclear_g_dvt": 0.035,
+      "unclear_g_rest_pain": 0.02666666666666667,
+      "unclear_g_medical": 0.015
+    },
+    "asked_mean": 21,
+    "asked_median": 21,
+    "asked_max": 21
+  },
+  {
+    "scenario_id": "football.patellofemoral_pain",
+    "declared_questions": 24,
+    "walks": 3000,
+    "policy": "unknown_heavy",
+    "outcomes": {
+      "refer_specialist": 1.0
+    },
+    "tiers": {
+      "unclear": 1.0
+    },
+    "reasons": {
+      "unclear_g_age": 0.298,
+      "unclear_g_trend": 0.21266666666666667,
+      "unclear_g_deformity": 0.146,
+      "unclear_g_circulation": 0.1,
+      "unclear_g_pain_swelling": 0.07466666666666667,
+      "unclear_g_hot_joint": 0.04733333333333333,
+      "unclear_g_prior_eval": 0.04566666666666667,
+      "unclear_g_dvt": 0.03266666666666666,
+      "unclear_g_rest_pain": 0.025,
+      "unclear_g_medical": 0.018
+    },
+    "asked_mean": 22,
+    "asked_median": 22,
+    "asked_max": 22
+  },
+  {
+    "scenario_id": "football.quadriceps_strain",
+    "declared_questions": 25,
+    "walks": 3000,
+    "policy": "unknown_heavy",
+    "outcomes": {
+      "refer_specialist": 1.0
+    },
+    "tiers": {
+      "unclear": 1.0
+    },
+    "reasons": {
+      "unclear_g_age": 0.298,
+      "unclear_g_trend": 0.21266666666666667,
+      "unclear_g_deformity": 0.146,
+      "unclear_g_circulation": 0.1,
+      "unclear_g_pain_swelling": 0.07466666666666667,
+      "unclear_g_hot_joint": 0.04733333333333333,
+      "unclear_g_prior_eval": 0.04566666666666667,
+      "unclear_g_dvt": 0.03266666666666666,
+      "unclear_g_rest_pain": 0.025,
+      "unclear_g_medical": 0.018
+    },
+    "asked_mean": 22,
+    "asked_median": 22,
+    "asked_max": 22
+  }
+]

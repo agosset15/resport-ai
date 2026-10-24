@@ -19,6 +19,7 @@ from core.domain.scenario import (
     RESERVED_CONDITION_KEYS,
     CheckinCondition,
     Option,
+    PainMap,
     Plan,
     PlanTask,
     Question,
@@ -29,6 +30,7 @@ from core.domain.scenario import (
     ScenarioTexts,
     Stage,
 )
+from core.scenarios.images import PAIN_POINT_IMAGES
 
 SCHEMA_PATH = Path(__file__).with_name("schema.json")
 
@@ -125,12 +127,19 @@ def _build_scenario(raw: Mapping[str, Any]) -> Scenario:
     )
     plans = {key: _as_plan(key, value) for key, value in raw.get("plans", {}).items()}
     texts_raw = raw["texts"]
+    pain_map_raw = raw.get("pain_map")
     return Scenario(
         id=raw["id"],
         version=int(raw["version"]),
         sport=Sport(raw["sport"]),
         title=raw["title"],
         summary=raw.get("summary"),
+        body_region=raw.get("body_region"),
+        pain_map=(
+            PainMap(image=pain_map_raw["image"], caption=pain_map_raw.get("caption"))
+            if pain_map_raw
+            else None
+        ),
         entry_hints=tuple(raw.get("entry_hints", [])),
         questions=questions,
         red_flags=red_flags,
@@ -140,6 +149,7 @@ def _build_scenario(raw: Mapping[str, Any]) -> Scenario:
             refer_specialist=texts_raw["refer_specialist"],
             recovery_plan_intro=texts_raw["recovery_plan_intro"],
             escalation=texts_raw["escalation"],
+            self_rehab_intro=texts_raw.get("self_rehab_intro"),
         ),
     )
 
@@ -148,14 +158,14 @@ def _as_sequence(value: Any) -> Sequence[Any]:
     return value if isinstance(value, list | tuple) else [value]
 
 
-def _condition_question_refs(condition: Mapping[str, Any]) -> Iterable[tuple[str, list[str]]]:
+def condition_question_refs(condition: Mapping[str, Any]) -> Iterable[tuple[str, list[str]]]:
     """Достаёт из условия пары (question_key, допустимые option_id)."""
     for key, value in condition.items():
         if key in ("all", "any"):
             for sub in value:
-                yield from _condition_question_refs(sub)
+                yield from condition_question_refs(sub)
         elif key == "not":
-            yield from _condition_question_refs(value)
+            yield from condition_question_refs(value)
         elif key in RESERVED_CONDITION_KEYS:
             continue
         else:
@@ -180,7 +190,7 @@ def _validate_semantics(scenario: Scenario, raw: Mapping[str, Any]) -> list[str]
     def check_condition(
         condition: Mapping[str, Any], where: str, max_position: int | None = None
     ) -> None:
-        for question_key, options in _condition_question_refs(condition):
+        for question_key, options in condition_question_refs(condition):
             target = scenario.question(question_key)
             if target is None:
                 errors.append(
@@ -231,12 +241,29 @@ def _validate_semantics(scenario: Scenario, raw: Mapping[str, Any]) -> list[str]
     if scenario.routing and not scenario.routing[-1].is_default:
         errors.append(f"{sid}: default-правило должно быть последним в routing")
 
+    # Инвариант безопасности: route() берёт первое совпавшее правило, поэтому правило
+    # самостоятельного восстановления, стоящее выше, перекрыло бы направление к врачу.
+    first_self_rehab: int | None = None
+    for idx, rule in enumerate(scenario.routing):
+        if rule.is_default:
+            continue
+        if rule.outcome is Outcome.SELF_REHAB and first_self_rehab is None:
+            first_self_rehab = idx
+        elif rule.outcome is Outcome.REFER_SPECIALIST and first_self_rehab is not None:
+            errors.append(
+                f"{sid}/routing[{idx}]: правило к специалисту ({rule.reason_code}) стоит "
+                f"после правила самостоятельного восстановления в routing[{first_self_rehab}] "
+                "и никогда не сработает"
+            )
+
     for idx, rule in enumerate(scenario.routing):
         if rule.when is not None:
             check_condition(rule.when, f"routing[{idx}]")
-        if rule.outcome is Outcome.RECOVERY_PLAN:
+        if rule.outcome in (Outcome.RECOVERY_PLAN, Outcome.SELF_REHAB):
             if not rule.plan:
-                errors.append(f"{sid}/routing[{idx}]: outcome=recovery_plan требует поле plan")
+                errors.append(
+                    f"{sid}/routing[{idx}]: outcome={rule.outcome.value} требует поле plan"
+                )
             elif rule.plan not in scenario.plans:
                 errors.append(f"{sid}/routing[{idx}]: план '{rule.plan}' не описан в plans")
 
@@ -261,6 +288,12 @@ def _validate_semantics(scenario: Scenario, raw: Mapping[str, Any]) -> list[str]
 
     if not raw.get("entry_hints"):
         errors.append(f"{sid}: entry_hints пуст — классификатору не на что опереться")
+
+    if scenario.pain_map is not None and scenario.pain_map.image not in PAIN_POINT_IMAGES:
+        errors.append(
+            f"{sid}: неизвестная картинка зоны боли '{scenario.pain_map.image}'; "
+            f"допустимые: {sorted(PAIN_POINT_IMAGES)}"
+        )
 
     return errors
 

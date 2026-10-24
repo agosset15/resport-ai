@@ -4,11 +4,12 @@
 # (rf_emergency_*) и в reason_code маршрутов (today_*, planned_*, unclear_*).
 
 id: football.adductor_strain
-version: 1
+version: 2
 sport: football
 title: Боль в паху / внутренней поверхности бедра
 summary: 'Острая травма приводящих мышц бедра: сортировка по срочности и наблюдение'
-entry_hints: [потянул пах, болит пах, внутренняя поверхность бедра, приводящие мышцы, паховая боль, растяжение паха]
+body_region: groin
+entry_hints: [потянул пах, болит пах, внутренняя поверхность бедра, приводящие мышцы, паховая боль, растяжение паха, болит в паху, дернуло в паху, паховая область, приводящая мышца, больно после удара по мячу]
 
 questions:
   # без флагов
@@ -39,10 +40,26 @@ questions:
     - {id: improving, label: Постепенно уменьшается}
     - {id: unknown, label: Не знаю / не могу определить}
 
+  # Единый экстренный скринер. Детальные вопросы ниже задаются только при
+  # ответе «да» или «не знаю»: «не знаю» тоже обязано раскрывать каскад, иначе
+  # вместе с вопросами будут пропущены и красные флаги.
+  - key: g_alarm
+    text: Есть ли сейчас что-то из перечисленного?
+    hint: |-
+      Заметная деформация или открытая рана; конечность холодная, бледная или синюшная;
+      сильное онемение или нарастающая слабость; боль быстро и несоразмерно нарастает;
+      сустав горячий и красный, есть температура или очень плохое самочувствие;
+      необъяснимый отёк одной ноги, одышка или боль в груди.
+    options:
+    - {id: present, label: 'Да, что-то из этого есть'}
+    - {id: none, label: 'Нет, ничего из этого'}
+    - {id: unknown, label: Не знаю / не могу определить}
+
   # Э: e_major | С: c_minor
   - key: g_deformity
     text: Изменилась ли форма руки или ноги? Есть открытая рана?
     hint: Не пытайся ничего вправлять или выпрямлять сам.
+    ask_if: {g_alarm: [present, unknown]}
     options:
     - {id: e_major, label: Да — заметная деформация или большая открытая рана}
     - {id: c_minor, label: Форма немного изменилась или есть небольшая рана}
@@ -52,6 +69,7 @@ questions:
   # Э: e_color, e_numb | С: c_tingling
   - key: g_circulation
     text: Рука или нога стала холодной, бледной или синюшной? Появились онемение или слабость?
+    ask_if: {g_alarm: [present, unknown]}
     options:
     - {id: e_color, label: 'Холодная, бледная или синюшная'}
     - {id: e_numb, label: Сильное онемение или слабость нарастает}
@@ -62,6 +80,7 @@ questions:
   # Э: e_disproportionate | С: c_significant | П: p_moderate
   - key: g_pain_swelling
     text: Насколько сильны боль и отёк? Они нарастают?
+    ask_if: {g_alarm: [present, unknown]}
     options:
     - {id: e_disproportionate, label: 'Боль быстро нарастает, несоразмерно сильная, ткани напряжены'}
     - {id: c_significant, label: 'Сильный или растущий отёк, двигать почти не получается'}
@@ -72,6 +91,7 @@ questions:
   # Э: e_severe | С: c_hot
   - key: g_hot_joint
     text: Сустав горячий и покрасневший? Есть температура или плохое общее самочувствие?
+    ask_if: {g_alarm: [present, unknown]}
     options:
     - {id: e_severe, label: Очень плохое общее самочувствие}
     - {id: c_hot, label: 'Сустав горячий, красный и болит (с температурой или без)'}
@@ -81,6 +101,7 @@ questions:
   # Э: e_breath | С: c_leg_swelling
   - key: g_dvt
     text: Появился отёк одной ноги без понятной причины? Есть одышка или боль в груди?
+    ask_if: {g_alarm: [present, unknown]}
     options:
     - {id: e_breath, label: Есть одышка или боль в груди}
     - {id: c_leg_swelling, label: 'Необъяснимый отёк одной ноги, особенно после операции или гипса'}
@@ -359,31 +380,6 @@ questions:
     - {id: p_present, label: Есть}
     - {id: unknown, label: Не знаю / не могу определить}
 
-  # П: p_disturbed
-  - key: g_sleep
-    text: Боль мешает спать?
-    ask_if:
-      not:
-        any:
-        - g_trend: [c_rapid]
-        - g_deformity: [c_minor]
-        - g_circulation: [c_tingling]
-        - g_pain_swelling: [c_significant]
-        - g_hot_joint: [c_hot]
-        - g_dvt: [c_leg_swelling]
-        - g_rest_pain: [c_severe]
-        - g_medical: [c_postop_worse]
-        - ad_onset: [c_acute_loss]
-        - ad_walk: [c_cannot]
-        - ad_hip: [c_present]
-        - ad_hernia: [c_painful]
-        - ad_systemic: [c_present]
-        - ad_pop: [c_present]
-    options:
-    - {id: sleep_ok, label: 'Нет, сплю нормально'}
-    - {id: p_disturbed, label: 'Да, просыпаюсь от боли'}
-    - {id: unknown, label: Не знаю / не могу определить}
-
   # П: p_not_feasible, p_no_program
   - key: g_program
     text: Врач или реабилитолог назначил программу упражнений? Получается её выполнять?
@@ -594,16 +590,6 @@ routing:
     outcome: refer_specialist
     reason_code: planned_g_adult
 
-  # П: Стойкое умеренное ограничение
-  - when: {g_trend: p_moderate}
-    outcome: refer_specialist
-    reason_code: planned_g_trend
-
-  # П: Стойкие умеренные боль и отёк (промежуточный вариант, добавлен при переводе)
-  - when: {g_pain_swelling: p_moderate}
-    outcome: refer_specialist
-    reason_code: planned_g_pain_swelling
-
   # П: Устойчивая боль в покое/ночью или общие симптомы
   - when: {g_rest_pain: p_rest}
     outcome: refer_specialist
@@ -614,52 +600,15 @@ routing:
     outcome: refer_specialist
     reason_code: planned_g_medical
 
-  # П: Паховая боль не обязательно мышечная — нужен осмотр
-  - when: {ad_location: p_deep}
-    outcome: refer_specialist
-    reason_code: planned_ad_location
-
-  # П: Постепенная стойкая или неясная боль
-  - when: {ad_onset: p_gradual}
-    outcome: refer_specialist
-    reason_code: planned_ad_onset
-
-  # П: Сохраняющаяся хромота
-  - when: {ad_walk: p_limp}
-    outcome: refer_specialist
-    reason_code: planned_ad_walk
-
   # П: Безболезненное выпячивание в паху
   - when: {ad_hernia: p_painless}
     outcome: refer_specialist
     reason_code: planned_ad_hernia
 
-  # П: Повторяющаяся или стойкая паховая боль
-  - when: {ad_recurrence: p_present}
-    outcome: refer_specialist
-    reason_code: planned_ad_recurrence
-
-  # П: Повторный эпизод (рецидив); Остаточное ограничение после прошлой травмы
-  - when:
-      g_history: [p_recurrence, p_residual]
-    outcome: refer_specialist
-    reason_code: planned_g_history
-
   # П: Значимый сопутствующий риск — план согласовать со специалистом
   - when: {g_comorbid: p_present}
     outcome: refer_specialist
     reason_code: planned_g_comorbid
-
-  # П: Боль нарушает сон
-  - when: {g_sleep: p_disturbed}
-    outcome: refer_specialist
-    reason_code: planned_g_sleep
-
-  # П: Назначенная программа невыполнима в текущих условиях; Бот не подбирает упражнения сам — программу назначает специалист
-  - when:
-      g_program: [p_not_feasible, p_no_program]
-    outcome: refer_specialist
-    reason_code: planned_g_program
 
   # П: Домашний план возможен, только если в случае ухудшения доступна помощь
   - when: {g_help_access: p_no_access}
@@ -725,21 +674,6 @@ routing:
     reason_code: unclear_g_medical
 
   # не знаю: ответ «не знаю» не равен «нет»
-  - when: {g_prior_eval: unknown}
-    outcome: refer_specialist
-    reason_code: unclear_g_prior_eval
-
-  # не знаю: ответ «не знаю» не равен «нет»
-  - when: {ad_location: unknown}
-    outcome: refer_specialist
-    reason_code: unclear_ad_location
-
-  # не знаю: ответ «не знаю» не равен «нет»
-  - when: {ad_onset: unknown}
-    outcome: refer_specialist
-    reason_code: unclear_ad_onset
-
-  # не знаю: ответ «не знаю» не равен «нет»
   - when: {ad_walk: unknown}
     outcome: refer_specialist
     reason_code: unclear_ad_walk
@@ -769,115 +703,69 @@ routing:
     outcome: refer_specialist
     reason_code: unclear_ad_pop
 
-  # не знаю: ответ «не знаю» не равен «нет»
-  - when: {ad_recurrence: unknown}
-    outcome: refer_specialist
-    reason_code: unclear_ad_recurrence
-
-  # не знаю: ответ «не знаю» не равен «нет»
-  - when: {g_history: unknown}
-    outcome: refer_specialist
-    reason_code: unclear_g_history
-
-  # не знаю: ответ «не знаю» не равен «нет»
-  - when: {g_comorbid: unknown}
-    outcome: refer_specialist
-    reason_code: unclear_g_comorbid
-
-  # не знаю: ответ «не знаю» не равен «нет»
-  - when: {g_sleep: unknown}
-    outcome: refer_specialist
-    reason_code: unclear_g_sleep
-
-  # не знаю: ответ «не знаю» не равен «нет»
-  - when: {g_program: unknown}
-    outcome: refer_specialist
-    reason_code: unclear_g_program
-
-  # не знаю: ответ «не знаю» не равен «нет»
-  - when: {g_help_access: unknown}
-    outcome: refer_specialist
-    reason_code: unclear_g_help_access
-
-  # Д: диагноз этого эпизода есть, программа назначена специалистом, все ответы — Н
+  # Д: диагноз этого эпизода есть, программа назначена специалистом
   - when:
       all:
       - {g_prior_eval: this_episode}
       - {g_program: ready}
-      - g_age: [adult, minor]
-      - any:
-        - not: {g_age: minor}
-        - g_adult: [adult_involved]
-      - g_trend: [improving]
-      - g_deformity: [absent]
-      - g_circulation: [absent]
-      - g_pain_swelling: [mild_decreasing]
-      - g_hot_joint: [absent]
-      - g_dvt: [absent]
-      - g_rest_pain: [load_only, absent]
-      - g_medical: [agreed, absent]
-      - g_prior_eval: [this_episode, previous_only, not_evaluated]
-      - ad_location: [inner_thigh]
-      - ad_onset: [kick, change_direction, lunge_split]
-      - ad_walk: [normal]
-      - ad_hip: [absent]
-      - ad_hernia: [absent]
-      - ad_testicle: [absent]
-      - ad_systemic: [absent]
-      - ad_pop: [absent]
-      - ad_recurrence: [improving]
-      - g_history: [absent]
-      - g_comorbid: [absent]
-      - g_sleep: [sleep_ok]
-      - any:
-        - not: {g_prior_eval: this_episode}
-        - g_program: [ready]
-      - g_help_access: [accessible]
     outcome: recovery_plan
     plan: adductor_strain_prescribed
     reason_code: home_prescribed_program
+  # П: Стойкое умеренное ограничение
+  - when: {g_trend: p_moderate}
+    outcome: self_rehab
+    plan: self_rehab_guarded
+    reason_code: watch_g_trend
 
-  # Д: новый неясный эпизод, все ответы — Н → только краткое наблюдение 48–72 ч
+  # П: Стойкие умеренные боль и отёк (промежуточный вариант, добавлен при переводе)
+  - when: {g_pain_swelling: p_moderate}
+    outcome: self_rehab
+    plan: self_rehab_guarded
+    reason_code: watch_g_pain_swelling
+
+  # П: Паховая боль не обязательно мышечная — нужен осмотр
+  - when: {ad_location: p_deep}
+    outcome: self_rehab
+    plan: self_rehab_guarded
+    reason_code: watch_ad_location
+
+  # П: Постепенная стойкая или неясная боль
+  - when: {ad_onset: p_gradual}
+    outcome: self_rehab
+    plan: self_rehab_guarded
+    reason_code: watch_ad_onset
+
+  # П: Сохраняющаяся хромота
+  - when: {ad_walk: p_limp}
+    outcome: self_rehab
+    plan: self_rehab_guarded
+    reason_code: watch_ad_walk
+
+  # П: Повторяющаяся или стойкая паховая боль
+  - when: {ad_recurrence: p_present}
+    outcome: self_rehab
+    plan: self_rehab_guarded
+    reason_code: watch_ad_recurrence
+
+  # П: Повторный эпизод (рецидив); Остаточное ограничение после прошлой травмы
   - when:
-      all:
-      - {g_age: adult}
-      - g_prior_eval: [previous_only, not_evaluated]
-      - g_age: [adult, minor]
-      - any:
-        - not: {g_age: minor}
-        - g_adult: [adult_involved]
-      - g_trend: [improving]
-      - g_deformity: [absent]
-      - g_circulation: [absent]
-      - g_pain_swelling: [mild_decreasing]
-      - g_hot_joint: [absent]
-      - g_dvt: [absent]
-      - g_rest_pain: [load_only, absent]
-      - g_medical: [agreed, absent]
-      - g_prior_eval: [this_episode, previous_only, not_evaluated]
-      - ad_location: [inner_thigh]
-      - ad_onset: [kick, change_direction, lunge_split]
-      - ad_walk: [normal]
-      - ad_hip: [absent]
-      - ad_hernia: [absent]
-      - ad_testicle: [absent]
-      - ad_systemic: [absent]
-      - ad_pop: [absent]
-      - ad_recurrence: [improving]
-      - g_history: [absent]
-      - g_comorbid: [absent]
-      - g_sleep: [sleep_ok]
-      - any:
-        - not: {g_prior_eval: this_episode}
-        - g_program: [ready]
-      - g_help_access: [accessible]
-    outcome: recovery_plan
-    plan: adductor_strain_observation
-    reason_code: home_observation
+      g_history: [p_recurrence, p_residual]
+    outcome: self_rehab
+    plan: self_rehab_guarded
+    reason_code: watch_g_history
 
-  # Всё остальное (в т.ч. неразобранный свободный текст) — к специалисту
-  - {default: true, outcome: refer_specialist, reason_code: default_referral}
+  # П: Назначенная программа невыполнима в текущих условиях; Бот не подбирает упражнения сам — программу назначает специалист
+  - when:
+      g_program: [p_not_feasible, p_no_program]
+    outcome: self_rehab
+    plan: self_rehab_guarded
+    reason_code: watch_g_program
 
+  # D: тревожных признаков нет — ведём самостоятельное восстановление
+  - default: true
+    outcome: self_rehab
+    plan: self_rehab_basic
+    reason_code: default_self_rehab
 plans:
   adductor_strain_prescribed:
     title: Восстановление по программе специалиста
@@ -897,27 +785,54 @@ plans:
       - {key: no_progression, text: Если к утру стало хуже — нагрузку не повышать}
       advance_if: {feeling: better, consecutive: 3, tasks_done_ratio_gte: 0.7}
       escalate_if: {feeling: worse, consecutive: 2}
-  adductor_strain_observation:
-    title: Наблюдение 48–72 часа после травмы паховой области
+  self_rehab_basic:
+    title: Самостоятельное восстановление
     completion_text: |
-      Улучшение есть — но это не допуск к тренировкам. Возврат к ударам, рывкам
-      и смене направления оценивают отдельно; для программы восстановления нужен
-      установленный диагноз — покажись специалисту. Если боль возвращается
-      при попытке играть — нужен очный осмотр.
+      Программа пройдена. Это не вывод о полном выздоровлении и не допуск к тренировкам:
+      возврат к бегу, прыжкам, смене направления и контакту оценивает специалист.
+      Если боль вернулась или прогресс остановился — покажись врачу.
     stages:
-    - key: observation
-      title: Наблюдение
+    - key: relief
+      title: Первые дни — снять нагрузку
       days: 3
-      description: Бытовая активность в комфортных пределах и ежедневная повторная оценка.
+      description: Бытовая активность в комфортных пределах и ежедневная оценка.
       tasks:
-      - {key: comfort_activity, text: 'Обычная ходьба и бытовые дела в комфортных пределах — без ударов, рывков и смены направления'}
-      - {key: no_adduction_load, text: Не делать силовых упражнений на приведение бедра (в т.ч. Copenhagen) и растяжки через боль}
-      - {key: morning_check, text: Утром отметить боль (0–10) и как даётся обычная ходьба}
+      - {key: comfort_activity, text: 'Обычные бытовые дела в комфортных пределах — без тренировок, бега и игры'}
+      - {key: no_self_tests, text: 'Не проверять травму прыжками, нажатием и растяжкой'}
+      - {key: morning_check, text: 'Утром отметить боль (0–10), отёк и как даётся обычная нагрузка'}
       advance_if: {feeling: better, consecutive: 2, min_days: 2}
+      escalate_if: {feeling: worse, consecutive: 2}
+    - key: load_return
+      title: Постепенное возвращение нагрузки
+      days: 7
+      description: Добавляем нагрузку маленькими шагами и смотрим на реакцию к утру.
+      tasks:
+      - {key: daily_activity, text: 'Полный объём бытовой активности — в пределах, где нет боли'}
+      - {key: gradual_load, text: 'Добавлять нагрузку маленькими шагами: больно или хуже к утру — шаг назад'}
+      - {key: no_sport_yet, text: 'Без тренировок, игры, прыжков и смены направления'}
+      - {key: morning_check, text: 'Утром отметить боль (0–10), отёк и как даётся нагрузка'}
+      advance_if: {feeling: better, consecutive: 3, tasks_done_ratio_gte: 0.7}
+      escalate_if: {feeling: worse, consecutive: 2}
+  self_rehab_guarded:
+    title: Самостоятельное восстановление под наблюдением
+    completion_text: |
+      Период наблюдения пройден. Это не диагноз и не допуск к тренировкам.
+      По твоим ответам были стойкие симптомы, поэтому покажись специалисту,
+      прежде чем возвращаться к спорту.
+    stages:
+    - key: guarded_watch
+      title: Осторожное наблюдение
+      days: 7
+      description: Нагрузку не наращиваем, следим за динамикой каждый день.
+      tasks:
+      - {key: comfort_activity, text: 'Только бытовая активность в комфортных пределах — без тренировок и игры'}
+      - {key: no_self_tests, text: 'Не проверять травму прыжками, нажатием и растяжкой'}
+      - {key: morning_check, text: 'Утром отметить боль (0–10), отёк и как даётся обычная нагрузка'}
+      - {key: note_change, text: 'Записать, если появился новый признак: онемение, деформация, температура, рост отёка'}
+      advance_if: {feeling: better, consecutive: 3, min_days: 3}
       escalate_if:
         feeling: [same, worse]
         consecutive: 2
-
 texts:
   refer_specialist: |
     По твоим ответам нужен очный осмотр — самостоятельное восстановление сейчас
@@ -937,3 +852,9 @@ texts:
     Самочувствие не улучшается два чек-ина подряд — дальше по плану не идём,
     нужен очный осмотр. Если появились деформация, онемение, холодная или синюшная
     кожа либо резко нарастающая боль — вызывай экстренную помощь.
+  self_rehab_intro: |
+    Тревожных признаков в твоих ответах нет. Это не диагноз и не допуск к тренировкам.
+    Дальше — короткий план: каждый день отмечаешь задачи и самочувствие.
+    Гарантий я не даю: травму я не осматривал. Если станет хуже, появится онемение,
+    деформация, холодная или синюшная кожа, резко вырастет отёк или за несколько дней
+    не станет легче — останови план и покажись врачу.

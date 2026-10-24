@@ -26,6 +26,7 @@ class ClassificationResult:
     scenario_id: str | None
     confidence: float | None
     choices: tuple[ScenarioChoice, ...] = ()
+    suggested_region: str | None = None
 
     @property
     def needs_manual_choice(self) -> bool:

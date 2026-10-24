@@ -12,14 +12,17 @@ from apps.bot import texts
 from apps.bot.flow import advance
 from apps.bot.keyboards.common import (
     ConsentCB,
+    MoreScenariosCB,
     ScenarioCB,
     SportCB,
     consent_kb,
     scenarios_kb,
     sports_kb,
 )
+from apps.bot.renderers import send_pain_point
 from apps.bot.states import TriageFlow
 from core.config import ContentSettings
+from core.domain.entities import Session
 from core.domain.enums import Sport
 from core.domain.scenario import ScenarioRegistry
 from core.services.tracker import TrackerService
@@ -29,6 +32,34 @@ from core.services.user import UserService
 router = Router(name="onboarding")
 
 MIN_COMPLAINT_LENGTH = 10
+
+
+async def _to_pain_point_or_survey(
+    message: Message,
+    state: FSMContext,
+    *,
+    triage: TriageService,
+    tracker: TrackerService,
+    content: ContentSettings,
+    session: Session,
+    timezone: str,
+) -> None:
+    """Показывает карту боли; если её нет — сразу переходит к опросу."""
+    scenario = triage.scenario_of(session)
+    shown = await send_pain_point(message, scenario, content)
+    if shown:
+        await state.set_state(TriageFlow.confirming_pain_point)
+        await state.update_data(session_id=str(session.id))
+        return
+    await advance(
+        message,
+        state,
+        triage=triage,
+        tracker=tracker,
+        content=content,
+        session_id=session.id,
+        timezone=timezone,
+    )
 
 
 @router.message(CommandStart())
@@ -121,20 +152,24 @@ async def receive_complaint(
 
     result = await triage.submit_complaint(session, message.text)
     if result.needs_manual_choice:
-        await message.answer(texts.CLASSIFY_FALLBACK, reply_markup=scenarios_kb(result.choices))
+        narrowed = len(result.choices) < len(triage.choices_for(session.sport))
+        await message.answer(
+            texts.CLASSIFY_NARROWED if narrowed else texts.CLASSIFY_FALLBACK,
+            reply_markup=scenarios_kb(result.choices, narrowed=narrowed),
+        )
         return
 
     session = await triage.get_session(session.id)
     assert session is not None
     scenario = triage.scenario_of(session)
     await message.answer(texts.CLASSIFY_OK.format(title=scenario.title))
-    await advance(
+    await _to_pain_point_or_survey(
         message,
         state,
         triage=triage,
         tracker=tracker,
         content=content,
-        session_id=session.id,
+        session=session,
         timezone=user.timezone,
     )
 
@@ -160,14 +195,37 @@ async def choose_scenario(
 
     session = await triage.select_scenario(session, callback_data.scenario_id)
     await callback.message.edit_reply_markup(reply_markup=None)
-    await advance(
+    await _to_pain_point_or_survey(
         callback.message,
         state,
         triage=triage,
         tracker=tracker,
         content=content,
-        session_id=session.id,
+        session=session,
         timezone=user.timezone,
+    )
+    await callback.answer()
+
+
+@router.callback_query(MoreScenariosCB.filter())
+@inject
+async def show_all_scenarios(
+    callback: CallbackQuery,
+    users: FromDishka[UserService],
+    triage: FromDishka[TriageService],
+) -> None:
+    """Сужённый список не должен становиться тупиком: даём полный набор."""
+    if callback.from_user is None or not isinstance(callback.message, Message):
+        return
+    user = await users.get_or_create(callback.from_user.id, callback.from_user.username)
+    session = await triage.active_session(user)
+    if session is None:
+        await callback.answer(texts.NO_ACTIVE_SESSION, show_alert=True)
+        return
+    await callback.message.edit_reply_markup(reply_markup=None)
+    await callback.message.answer(
+        texts.CLASSIFY_FALLBACK,
+        reply_markup=scenarios_kb(triage.choices_for(session.sport)),
     )
     await callback.answer()
 

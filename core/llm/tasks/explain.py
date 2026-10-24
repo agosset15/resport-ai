@@ -23,6 +23,8 @@ SYSTEM = """Ты объясняешь спортсмену готовое реш
 - Не обещай сроки выздоровления.
 - Если решение — обратиться к специалисту, не отговаривай и не смягчай.
 - Если решение — план восстановления, не обещай, что всё точно заживёт само.
+- Если решение — самостоятельное восстановление, обязательно скажи, что это не диагноз,
+  гарантий нет, и при ухудшении нужен очный осмотр. Не обещай результат.
 - 2–4 коротких предложения, обращение на «ты», без медицинского жаргона и эмодзи.
 - Никаких новых рекомендаций сверх переданных данных.
 - Отвечай строго в заданной JSON-схеме."""
@@ -53,7 +55,7 @@ def _user_prompt(
     if readable:
         lines.append("Ответы спортсмена:")
         lines += readable
-    if decision.outcome is Outcome.RECOVERY_PLAN and decision.plan_key:
+    if decision.starts_plan and decision.plan_key:
         plan = scenario.plans.get(decision.plan_key)
         if plan is not None:
             lines.append(f"Предлагаемый план: {plan.title}, {len(plan.stages)} этапа(ов)")
@@ -85,4 +87,6 @@ async def explain_step(
 def fallback_text(scenario: Scenario, decision: TriageDecision) -> str:
     if decision.outcome is Outcome.REFER_SPECIALIST:
         return scenario.texts.refer_specialist
+    if decision.outcome is Outcome.SELF_REHAB:
+        return scenario.texts.self_rehab_intro or scenario.texts.recovery_plan_intro
     return scenario.texts.recovery_plan_intro

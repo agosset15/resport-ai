@@ -15,6 +15,20 @@
     "sport": {"enum": ["football", "basketball"]},
     "title": {"type": "string", "minLength": 1},
     "summary": {"type": "string"},
+    "body_region": {
+      "enum": ["ankle_foot", "knee", "thigh_front", "thigh_back", "groin", "hand_finger"],
+      "description": "область тела: отбор общих вопросов и выбор картинки зоны боли"
+    },
+    "pain_map": {
+      "type": "object",
+      "required": ["image"],
+      "additionalProperties": false,
+      "properties": {
+        "image": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+        "caption": {"type": "string", "minLength": 1}
+      },
+      "description": "картинка зоны боли, показывается до опроса для подтверждения точки"
+    },
     "entry_hints": {
       "type": "array",
       "items": {"type": "string", "minLength": 2},
@@ -50,7 +64,8 @@
       "properties": {
         "refer_specialist": {"type": "string", "minLength": 1},
         "recovery_plan_intro": {"type": "string", "minLength": 1},
-        "escalation": {"type": "string", "minLength": 1}
+        "escalation": {"type": "string", "minLength": 1},
+        "self_rehab_intro": {"type": "string", "minLength": 1}
       },
       "description": "статичные фоллбэки на случай недоступности LLM"
     }
@@ -124,7 +139,7 @@
       "properties": {
         "when": {"$ref": "#/$defs/condition"},
         "default": {"type": ["boolean", "null"]},
-        "outcome": {"enum": ["refer_specialist", "recovery_plan"]},
+        "outcome": {"enum": ["refer_specialist", "recovery_plan", "self_rehab"]},
         "plan": {"type": "string"},
         "reason_code": {"type": "string"}
       }

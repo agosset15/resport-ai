@@ -240,10 +240,25 @@ class TestOutcome:
         assert harness.triage_repo.results[session.id].outcome is Outcome.REFER_SPECIALIST
 
 
+class TestPrematch:
+    async def test_exact_hint_match_skips_llm(self, scripted: Harness) -> None:
+        """Однозначное совпадение с entry_hints решается без модели и без её оплаты."""
+        _, session = await scripted.new_session()
+        result = await scripted.service.submit_complaint(session, "подвернул голеностоп")
+        assert result.scenario_id == "football.ankle_sprain"
+        assert result.confidence == 1.0
+        assert not scripted.audit.calls
+
+    async def test_vague_complaint_falls_through_to_llm(self, scripted: Harness) -> None:
+        _, session = await scripted.new_session()
+        await scripted.service.submit_complaint(session, "после игры что-то не так")
+        assert scripted.audit.calls
+
+
 class TestAudit:
     async def test_every_llm_call_logged(self, scripted: Harness) -> None:
         _, session = await scripted.new_session()
-        await scripted.service.submit_complaint(session, "подвернул голеностоп")
+        await scripted.service.submit_complaint(session, "после игры что-то не так")
         assert scripted.audit.calls
         call = scripted.audit.calls[0]
         assert call["task"].value == "classify_complaint"

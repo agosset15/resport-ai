@@ -19,6 +19,7 @@ class SessionStatus(StrEnum):
 class Outcome(StrEnum):
     REFER_SPECIALIST = "refer_specialist"
     RECOVERY_PLAN = "recovery_plan"
+    SELF_REHAB = "self_rehab"
 
 
 class PlanStatus(StrEnum):
@@ -42,6 +43,7 @@ class AnswerSource(StrEnum):
 
 class LlmTask(StrEnum):
     CLASSIFY_COMPLAINT = "classify_complaint"
+    CLASSIFY_BODY_PART = "classify_body_part"
     NORMALIZE_ANSWER = "normalize_answer"
     EXPLAIN_STEP = "explain_step"
 
@@ -66,3 +68,9 @@ class EventType(StrEnum):
     PLAN_ESCALATED = "plan_escalated"
     PLAN_COMPLETED = "plan_completed"
     SPECIALIST_CTA_CLICKED = "specialist_cta_clicked"
+    SPECIALIST_REQUESTED = "specialist_requested"
+    PAIN_POINT_CONFIRMED = "pain_point_confirmed"
+    PAIN_POINT_REJECTED = "pain_point_rejected"
+    SELF_REHAB_OFFERED = "self_rehab_offered"
+    SELF_REHAB_STARTED = "self_rehab_started"
+    SELF_REHAB_DECLINED = "self_rehab_declined"

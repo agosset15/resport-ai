@@ -27,8 +27,12 @@ def _write(tmp_path: Path, mutate) -> Path:
 
 class TestHappyPath:
     def test_registry_has_both_sports(self, registry: ScenarioRegistry) -> None:
-        assert set(registry.ids()) == {"football.ankle_sprain", "basketball.patellar_pain"}
-        assert len(registry.for_sport(Sport.FOOTBALL)) == 1
+        assert set(registry.ids()) == {
+            "football.ankle_sprain",
+            "football.bruise",
+            "basketball.patellar_pain",
+        }
+        assert len(registry.for_sport(Sport.FOOTBALL)) == 2
         assert len(registry.for_sport(Sport.BASKETBALL)) == 1
 
     def test_options_get_labels(self, registry: ScenarioRegistry) -> None:

@@ -12,6 +12,7 @@ from apps.bot.keyboards.common import reminder_kb
 from apps.bot.renderers import send_outcome, send_question, send_stage
 from apps.bot.states import TrackerFlow, TriageFlow
 from core.config import ContentSettings
+from core.domain.entities import Session
 from core.domain.enums import Outcome
 from core.services.dto import QuestionView
 from core.services.tracker import TrackerService
@@ -53,8 +54,36 @@ async def advance(
         await state.clear()
         return
 
+    if step.outcome is Outcome.SELF_REHAB:
+        # План стартует только после явного согласия — handlers/triage.py::self_rehab_consent.
+        await state.set_state(TriageFlow.waiting_self_rehab_consent)
+        await state.update_data(session_id=str(session.id))
+        return
+
+    await start_plan(
+        message,
+        state,
+        triage=triage,
+        tracker=tracker,
+        session=session,
+        plan_key=step.plan_key,
+        timezone=timezone,
+    )
+
+
+async def start_plan(
+    message: Message,
+    state: FSMContext,
+    *,
+    triage: TriageService,
+    tracker: TrackerService,
+    session: Session,
+    plan_key: str,
+    timezone: str | None = None,
+) -> None:
+    """Выдаёт план и запускает трекер. Общий хвост для recovery_plan и self_rehab."""
     scenario = triage.scenario_of(session)
-    plan, _ = await tracker.start_plan(session, scenario, step.plan_key)
+    plan, _ = await tracker.start_plan(session, scenario, plan_key)
     stage = await tracker.today_view(plan, timezone=timezone)
     total_days = sum(s.days for s in tracker.plan_of(plan).stages)
 

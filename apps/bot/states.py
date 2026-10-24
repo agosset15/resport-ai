@@ -8,6 +8,9 @@ from aiogram.fsm.state import State, StatesGroup
 class TriageFlow(StatesGroup):
     waiting_complaint = State()
     waiting_answer_text = State()
+    confirming_pain_point = State()
+    choosing_route = State()
+    waiting_self_rehab_consent = State()
 
 
 class TrackerFlow(StatesGroup):

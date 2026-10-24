@@ -49,6 +49,7 @@ def plan_to_snapshot(scenario: Scenario, plan: Plan) -> dict[str, Any]:
             "recovery_plan_intro": scenario.texts.recovery_plan_intro,
             "escalation": scenario.texts.escalation,
             "refer_specialist": scenario.texts.refer_specialist,
+            "self_rehab_intro": scenario.texts.self_rehab_intro or "",
         },
         "stages": [
             {

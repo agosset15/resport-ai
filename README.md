@@ -16,12 +16,44 @@ Mini App добавляется вторым адаптером поверх т�
 
 | Задача | Выход | При сбое |
 |---|---|---|
-| `classify_complaint` | `{scenario_id: enum, confidence, body_part}` | кнопочный выбор сценария |
+| `classify_complaint` | `{body_region: enum, scenario_id: enum, confidence, alternatives}` | сужённый выбор кнопками |
 | `normalize_answer` | `{option_id: enum}` | переспрос кнопками |
 | `explain_step` | `{text}` | статичный текст из YAML |
 
 `scenario_id` и `option_id` — `Literal`, собранный из загруженных YAML: выдуманное значение
 не проходит валидацию pydantic и уходит в фоллбэк. Все вызовы пишутся в `llm_calls`.
+
+До обращения к модели работает детерминированный подбор по `entry_hints`
+(`core/scenarios/matching.py`): однозначное совпадение закрывает вопрос без запроса к LLM,
+неоднозначное — сужает список кандидатов, который уходит и в промпт, и на кнопки.
+
+## Исходы
+
+| Исход | Когда | Что дальше |
+|---|---|---|
+| `refer_specialist` | red flag или правило тира «к врачу» | опрос обрывается, кнопка специалиста |
+| `recovery_plan` | есть диагноз этого эпизода и программа от специалиста | план из назначения |
+| `self_rehab` | тревожных признаков нет — это путь по умолчанию | дисклеймер «без гарантий», затем план |
+
+`self_rehab` стартует **только после явного согласия** с предупреждением: отказ закрывает
+сессию направлением к специалисту. Порядок правил в `routing` — часть безопасности:
+правило к специалисту не может стоять после правила самостоятельного восстановления,
+иначе оно никогда не сработает. Загрузчик это проверяет и падает на старте.
+
+## Инструменты
+
+```bash
+uv run python -m tools.simulate --scenario football.ankle_sprain   # ручной прогон
+uv run python -m tools.simulate --sample 1500 --all --policy benign  # распределение исходов
+uv run python -m tools.retier --dry-run     # пересборка маршрутизации в тиры
+uv run python -m tools.trim --dry-run       # сокращение опроса
+uv run python -m tools.reorder --dry-run    # порядок правил по тирам
+uv run python -m tools.hints --dry-run      # разговорные entry_hints
+```
+
+Скрипты пересборки одноразовые, но оставлены в репозитории: отчёты `docs/retier_report.md`
+и `docs/trim_report.md` — это то, что показывают врачу на ревью. Замеры до и после —
+в `docs/measurements/README.md`, открытые недочёты — в `docs/known_issues.md`.
 
 ## Структура
 

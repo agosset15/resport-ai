@@ -1,10 +1,11 @@
 # ЧЕРНОВИК. Требует ревью профильного врача до беты.
 id: basketball.patellar_pain
-version: 1
+version: 2
 sport: basketball
 title: "Болит колено спереди"
 summary: "Боль в передней части колена при нагрузке, без острой травмы"
 
+body_region: knee
 entry_hints:
   - "колено"
   - "болит колено"
@@ -97,10 +98,11 @@ routing:
     outcome: recovery_plan
     plan: patellar_load_management
     reason_code: overload_pattern
-  - default:
-    outcome: refer_specialist
-    reason_code: default_referral
-
+  # D: тревожных признаков нет — ведём самостоятельное восстановление
+  - default: true
+    outcome: self_rehab
+    plan: self_rehab_basic
+    reason_code: default_self_rehab
 plans:
   patellar_load_management:
     title: "Разгрузка и укрепление передней части колена"
@@ -144,6 +146,34 @@ plans:
         advance_if: {feeling: better, consecutive: 3, tasks_done_ratio_gte: 0.7}
         escalate_if: {feeling: worse, consecutive: 2}
 
+  self_rehab_basic:
+    title: Самостоятельное восстановление
+    completion_text: |
+      Программа пройдена. Это не вывод о полном выздоровлении и не допуск к тренировкам:
+      возврат к бегу, прыжкам, смене направления и контакту оценивает специалист.
+      Если боль вернулась или прогресс остановился — покажись врачу.
+    stages:
+    - key: relief
+      title: Первые дни — снять нагрузку
+      days: 3
+      description: Бытовая активность в комфортных пределах и ежедневная оценка.
+      tasks:
+      - {key: comfort_activity, text: 'Обычные бытовые дела в комфортных пределах — без тренировок, бега и игры'}
+      - {key: no_self_tests, text: 'Не проверять травму прыжками, нажатием и растяжкой'}
+      - {key: morning_check, text: 'Утром отметить боль (0–10), отёк и как даётся обычная нагрузка'}
+      advance_if: {feeling: better, consecutive: 2, min_days: 2}
+      escalate_if: {feeling: worse, consecutive: 2}
+    - key: load_return
+      title: Постепенное возвращение нагрузки
+      days: 7
+      description: Добавляем нагрузку маленькими шагами и смотрим на реакцию к утру.
+      tasks:
+      - {key: daily_activity, text: 'Полный объём бытовой активности — в пределах, где нет боли'}
+      - {key: gradual_load, text: 'Добавлять нагрузку маленькими шагами: больно или хуже к утру — шаг назад'}
+      - {key: no_sport_yet, text: 'Без тренировок, игры, прыжков и смены направления'}
+      - {key: morning_check, text: 'Утром отметить боль (0–10), отёк и как даётся нагрузка'}
+      advance_if: {feeling: better, consecutive: 3, tasks_done_ratio_gte: 0.7}
+      escalate_if: {feeling: worse, consecutive: 2}
 texts:
   refer_specialist: |
     По твоим ответам колено стоит показать специалисту. Это не диагноз — очный осмотр
@@ -155,3 +185,9 @@ texts:
   escalation: |
     Самочувствие ухудшается два чек-ина подряд. Продолжать план в такой ситуации не стоит —
     нужен очный осмотр специалиста.
+  self_rehab_intro: |
+    Тревожных признаков в твоих ответах нет. Это не диагноз и не допуск к тренировкам.
+    Дальше — короткий план: каждый день отмечаешь задачи и самочувствие.
+    Гарантий я не даю: травму я не осматривал. Если станет хуже, появится онемение,
+    деформация, холодная или синюшная кожа, резко вырастет отёк или за несколько дней
+    не станет легче — останови план и покажись врачу.

@@ -123,6 +123,15 @@ class ScenarioTexts:
     refer_specialist: str
     recovery_plan_intro: str
     escalation: str
+    self_rehab_intro: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class PainMap:
+    """Картинка зоны боли: показывается до опроса, чтобы подтвердить точку."""
+
+    image: str
+    caption: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -138,6 +147,8 @@ class Scenario:
     plans: Mapping[str, Plan]
     texts: ScenarioTexts
     summary: str | None = None
+    body_region: str | None = None
+    pain_map: PainMap | None = None
 
     def question(self, key: str) -> Question | None:
         for q in self.questions:

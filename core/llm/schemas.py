@@ -17,13 +17,26 @@ UNCLEAR = "unclear"
 
 
 class ClassifyComplaint(BaseModel):
-    """Базовая форма. Рабочая версия с enum создаётся `build_classify_model`."""
+    """Базовая форма. Рабочая версия с enum создаётся `build_classify_model`.
+
+    Порядок полей значим: модель генерирует их по очереди, поэтому `body_region`
+    объявлен первым — сначала определяется область тела, и уже внутри неё
+    выбирается сценарий. Сужение получается бесплатно, без второго запроса.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
+    # Значение по умолчанию: провайдер без structured output или старый ответ из
+    # кэша не должны ронять разбор — несогласованность ловится уровнем выше.
+    body_region: str = Field(default=UNKNOWN, description="область тела из списка или 'unknown'")
     scenario_id: str = Field(description="id сценария из списка или 'unknown'")
     confidence: float = Field(ge=0.0, le=1.0)
     body_part: str | None = Field(default=None, max_length=64)
+    alternatives: list[str] = Field(
+        default_factory=list,
+        max_length=2,
+        description="до двух других подходящих id, если выбор неочевиден",
+    )
 
 
 class NormalizeAnswer(BaseModel):
@@ -39,16 +52,27 @@ class ExplainStep(BaseModel):
 
 
 @lru_cache(maxsize=32)
-def build_classify_model(scenario_ids: tuple[str, ...]) -> type[ClassifyComplaint]:
-    """Модель, где scenario_id — Literal из загруженных сценариев плюс 'unknown'.
+def build_classify_model(
+    scenario_ids: tuple[str, ...], regions: tuple[str, ...] = ()
+) -> type[ClassifyComplaint]:
+    """Модель, где scenario_id и body_region — Literal из загруженных сценариев.
 
     Валидация жёсткая: выдуманный id не пройдёт `model_validate` и уйдёт в фоллбэк.
     """
     allowed = Literal[(*scenario_ids, UNKNOWN)]  # type: ignore[valid-type]
+    allowed_regions = Literal[(*regions, UNKNOWN)] if regions else str
     return create_model(
         "ClassifyComplaintStrict",
         __base__=ClassifyComplaint,
+        body_region=(
+            allowed_regions,
+            Field(default=UNKNOWN, description="область тела из списка или 'unknown'"),
+        ),
         scenario_id=(allowed, Field(description="id сценария из списка или 'unknown'")),
+        alternatives=(
+            list[allowed],
+            Field(default_factory=list, max_length=2),
+        ),
     )
 
 

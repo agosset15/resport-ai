@@ -97,6 +97,9 @@ class LlmSettings(_Base):
     max_output_tokens: int = 700
     cache_ttl_seconds: int = 3600
     classify_confidence_threshold: float = 0.6
+    #: Ниже порога принятия, но выше этого — показываем сужённый список,
+    #: а не все сценарии вида спорта: «не понял тебя» ощущается хуже всего.
+    classify_suggest_threshold: float = 0.35
     enabled_tasks: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: ["classify_complaint", "normalize_answer", "explain_step"]
     )
@@ -118,6 +121,7 @@ class ContentSettings(_Base):
     specialist_url: str = "https://t.me/resport_support"
     support_contact: str = "@resport_support"
     scenarios_dir: Path = PROJECT_ROOT / "core" / "scenarios" / "defs"
+    images_dir: Path = PROJECT_ROOT / "content" / "images"
     default_reminder_time: str = "19:00"
     default_timezone: str = "Europe/Moscow"
 

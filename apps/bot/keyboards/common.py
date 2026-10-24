@@ -44,6 +44,22 @@ class ReminderCB(CallbackData, prefix="rem"):
     value: str  # HH:MM | skip
 
 
+class PainPointCB(CallbackData, prefix="pp"):
+    action: str  # confirm | reject
+
+
+class RouteCB(CallbackData, prefix="route"):
+    choice: str  # doctor | self_rehab
+
+
+class MoreScenariosCB(CallbackData, prefix="scenall"):
+    pass
+
+
+class SelfRehabCB(CallbackData, prefix="selfreh"):
+    accept: bool
+
+
 class MenuCB(CallbackData, prefix="menu"):
     action: str  # plan | restart | specialist
 
@@ -63,10 +79,16 @@ def sports_kb(sports: Sequence[Sport]) -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 
-def scenarios_kb(choices: Sequence[ScenarioChoice]) -> InlineKeyboardMarkup:
+def scenarios_kb(
+    choices: Sequence[ScenarioChoice], *, narrowed: bool = False
+) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     for choice in choices:
         builder.button(text=choice.title, callback_data=ScenarioCB(scenario_id=choice.scenario_id))
+    if narrowed:
+        from apps.bot.texts import SHOW_ALL_SCENARIOS
+
+        builder.button(text=SHOW_ALL_SCENARIOS, callback_data=MoreScenariosCB())
     builder.adjust(1)
     return builder.as_markup()
 
@@ -88,6 +110,38 @@ def specialist_kb(url: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[[InlineKeyboardButton(text=SPECIALIST_BUTTON, url=url)]]
     )
+
+
+def pain_point_kb() -> InlineKeyboardMarkup:
+    from apps.bot.texts import PAIN_POINT_CONFIRM_BUTTON, PAIN_POINT_REJECT_BUTTON
+
+    builder = InlineKeyboardBuilder()
+    builder.button(text=PAIN_POINT_CONFIRM_BUTTON, callback_data=PainPointCB(action="confirm"))
+    builder.button(text=PAIN_POINT_REJECT_BUTTON, callback_data=PainPointCB(action="reject"))
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def route_kb() -> InlineKeyboardMarkup:
+    """Два пути после подтверждения точки боли: врач или самостоятельный план."""
+    from apps.bot.texts import ROUTE_DOCTOR_BUTTON, ROUTE_SELF_BUTTON
+
+    builder = InlineKeyboardBuilder()
+    builder.button(text=ROUTE_DOCTOR_BUTTON, callback_data=RouteCB(choice="doctor"))
+    builder.button(text=ROUTE_SELF_BUTTON, callback_data=RouteCB(choice="self_rehab"))
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def self_rehab_kb() -> InlineKeyboardMarkup:
+    """Явное согласие на самостоятельное восстановление: без него план не стартует."""
+    from apps.bot.texts import SELF_REHAB_ACCEPT_BUTTON, SELF_REHAB_DECLINE_BUTTON
+
+    builder = InlineKeyboardBuilder()
+    builder.button(text=SELF_REHAB_ACCEPT_BUTTON, callback_data=SelfRehabCB(accept=True))
+    builder.button(text=SELF_REHAB_DECLINE_BUTTON, callback_data=SelfRehabCB(accept=False))
+    builder.adjust(1)
+    return builder.as_markup()
 
 
 def tasks_kb(tasks: Sequence[PlanTask], selected: Sequence[str]) -> InlineKeyboardMarkup:

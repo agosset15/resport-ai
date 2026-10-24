@@ -4,11 +4,12 @@
 # (rf_emergency_*) и в reason_code маршрутов (today_*, planned_*, unclear_*).
 
 id: basketball.finger_sprain
-version: 1
+version: 2
 sport: basketball
 title: Травма пальца кисти
 summary: 'Выбитый, отогнутый или ушибленный палец: сортировка по срочности'
-entry_hints: [выбил палец, мяч попал в палец, палец опух, отбил палец, вывих пальца, большой палец руки, растяжение пальца]
+body_region: hand_finger
+entry_hints: [выбил палец, мяч попал в палец, палец опух, отбил палец, вывих пальца, большой палец руки, растяжение пальца, ушиб палец, ударил палец, попал мячом по пальцу, палец распух, палец не сгибается, мизинец, большой палец]
 
 questions:
   # без флагов
@@ -39,10 +40,26 @@ questions:
     - {id: improving, label: Постепенно уменьшается}
     - {id: unknown, label: Не знаю / не могу определить}
 
+  # Единый экстренный скринер. Детальные вопросы ниже задаются только при
+  # ответе «да» или «не знаю»: «не знаю» тоже обязано раскрывать каскад, иначе
+  # вместе с вопросами будут пропущены и красные флаги.
+  - key: g_alarm
+    text: Есть ли сейчас что-то из перечисленного?
+    hint: |-
+      Заметная деформация или открытая рана; конечность холодная, бледная или синюшная;
+      сильное онемение или нарастающая слабость; боль быстро и несоразмерно нарастает;
+      сустав горячий и красный, есть температура или очень плохое самочувствие;
+      необъяснимый отёк одной ноги, одышка или боль в груди.
+    options:
+    - {id: present, label: 'Да, что-то из этого есть'}
+    - {id: none, label: 'Нет, ничего из этого'}
+    - {id: unknown, label: Не знаю / не могу определить}
+
   # Э: e_major | С: c_minor
   - key: g_deformity
     text: Изменилась ли форма руки или ноги? Есть открытая рана?
     hint: Не пытайся ничего вправлять или выпрямлять сам.
+    ask_if: {g_alarm: [present, unknown]}
     options:
     - {id: e_major, label: Да — заметная деформация или большая открытая рана}
     - {id: c_minor, label: Форма немного изменилась или есть небольшая рана}
@@ -52,6 +69,7 @@ questions:
   # Э: e_color, e_numb | С: c_tingling
   - key: g_circulation
     text: Рука или нога стала холодной, бледной или синюшной? Появились онемение или слабость?
+    ask_if: {g_alarm: [present, unknown]}
     options:
     - {id: e_color, label: 'Холодная, бледная или синюшная'}
     - {id: e_numb, label: Сильное онемение или слабость нарастает}
@@ -62,6 +80,7 @@ questions:
   # Э: e_disproportionate | С: c_significant | П: p_moderate
   - key: g_pain_swelling
     text: Насколько сильны боль и отёк? Они нарастают?
+    ask_if: {g_alarm: [present, unknown]}
     options:
     - {id: e_disproportionate, label: 'Боль быстро нарастает, несоразмерно сильная, ткани напряжены'}
     - {id: c_significant, label: 'Сильный или растущий отёк, двигать почти не получается'}
@@ -72,18 +91,10 @@ questions:
   # Э: e_severe | С: c_hot
   - key: g_hot_joint
     text: Сустав горячий и покрасневший? Есть температура или плохое общее самочувствие?
+    ask_if: {g_alarm: [present, unknown]}
     options:
     - {id: e_severe, label: Очень плохое общее самочувствие}
     - {id: c_hot, label: 'Сустав горячий, красный и болит (с температурой или без)'}
-    - {id: absent, label: Нет}
-    - {id: unknown, label: Не знаю / не могу определить}
-
-  # Э: e_breath | С: c_leg_swelling
-  - key: g_dvt
-    text: Появился отёк одной ноги без понятной причины? Есть одышка или боль в груди?
-    options:
-    - {id: e_breath, label: Есть одышка или боль в груди}
-    - {id: c_leg_swelling, label: 'Необъяснимый отёк одной ноги, особенно после операции или гипса'}
     - {id: absent, label: Нет}
     - {id: unknown, label: Не знаю / не могу определить}
 
@@ -98,7 +109,6 @@ questions:
         - g_circulation: [c_tingling]
         - g_pain_swelling: [c_significant]
         - g_hot_joint: [c_hot]
-        - g_dvt: [c_leg_swelling]
     options:
     - {id: c_severe, label: Сильная боль в покое или быстро становится хуже}
     - {id: p_rest, label: 'Боль в покое или ночью держится, либо есть общие симптомы'}
@@ -117,7 +127,6 @@ questions:
         - g_circulation: [c_tingling]
         - g_pain_swelling: [c_significant]
         - g_hot_joint: [c_hot]
-        - g_dvt: [c_leg_swelling]
         - g_rest_pain: [c_severe]
     options:
     - {id: c_postop_worse, label: 'После недавней операции стало хуже, большой отёк или гематома'}
@@ -138,7 +147,6 @@ questions:
         - g_circulation: [c_tingling]
         - g_pain_swelling: [c_significant]
         - g_hot_joint: [c_hot]
-        - g_dvt: [c_leg_swelling]
         - g_rest_pain: [c_severe]
         - g_medical: [c_postop_worse]
     options:
@@ -158,7 +166,6 @@ questions:
         - g_circulation: [c_tingling]
         - g_pain_swelling: [c_significant]
         - g_hot_joint: [c_hot]
-        - g_dvt: [c_leg_swelling]
         - g_rest_pain: [c_severe]
         - g_medical: [c_postop_worse]
     options:
@@ -182,7 +189,6 @@ questions:
         - g_circulation: [c_tingling]
         - g_pain_swelling: [c_significant]
         - g_hot_joint: [c_hot]
-        - g_dvt: [c_leg_swelling]
         - g_rest_pain: [c_severe]
         - g_medical: [c_postop_worse]
     options:
@@ -215,7 +221,6 @@ questions:
         - g_circulation: [c_tingling]
         - g_pain_swelling: [c_significant]
         - g_hot_joint: [c_hot]
-        - g_dvt: [c_leg_swelling]
         - g_rest_pain: [c_severe]
         - g_medical: [c_postop_worse]
         - f_deformity: [c_present]
@@ -236,7 +241,6 @@ questions:
         - g_circulation: [c_tingling]
         - g_pain_swelling: [c_significant]
         - g_hot_joint: [c_hot]
-        - g_dvt: [c_leg_swelling]
         - g_rest_pain: [c_severe]
         - g_medical: [c_postop_worse]
         - f_deformity: [c_present]
@@ -257,7 +261,6 @@ questions:
         - g_circulation: [c_tingling]
         - g_pain_swelling: [c_significant]
         - g_hot_joint: [c_hot]
-        - g_dvt: [c_leg_swelling]
         - g_rest_pain: [c_severe]
         - g_medical: [c_postop_worse]
         - f_deformity: [c_present]
@@ -279,7 +282,6 @@ questions:
         - g_circulation: [c_tingling]
         - g_pain_swelling: [c_significant]
         - g_hot_joint: [c_hot]
-        - g_dvt: [c_leg_swelling]
         - g_rest_pain: [c_severe]
         - g_medical: [c_postop_worse]
         - f_deformity: [c_present]
@@ -305,7 +307,6 @@ questions:
           - g_circulation: [c_tingling]
           - g_pain_swelling: [c_significant]
           - g_hot_joint: [c_hot]
-          - g_dvt: [c_leg_swelling]
           - g_rest_pain: [c_severe]
           - g_medical: [c_postop_worse]
           - f_deformity: [c_present]
@@ -329,7 +330,6 @@ questions:
         - g_circulation: [c_tingling]
         - g_pain_swelling: [c_significant]
         - g_hot_joint: [c_hot]
-        - g_dvt: [c_leg_swelling]
         - g_rest_pain: [c_severe]
         - g_medical: [c_postop_worse]
         - f_deformity: [c_present]
@@ -356,7 +356,6 @@ questions:
         - g_circulation: [c_tingling]
         - g_pain_swelling: [c_significant]
         - g_hot_joint: [c_hot]
-        - g_dvt: [c_leg_swelling]
         - g_rest_pain: [c_severe]
         - g_medical: [c_postop_worse]
         - f_deformity: [c_present]
@@ -384,7 +383,6 @@ questions:
         - g_circulation: [c_tingling]
         - g_pain_swelling: [c_significant]
         - g_hot_joint: [c_hot]
-        - g_dvt: [c_leg_swelling]
         - g_rest_pain: [c_severe]
         - g_medical: [c_postop_worse]
         - f_deformity: [c_present]
@@ -397,32 +395,6 @@ questions:
     options:
     - {id: absent, label: 'Нет, насколько я знаю'}
     - {id: p_present, label: Есть}
-    - {id: unknown, label: Не знаю / не могу определить}
-
-  # П: p_disturbed
-  - key: g_sleep
-    text: Боль мешает спать?
-    ask_if:
-      not:
-        any:
-        - g_trend: [c_rapid]
-        - g_deformity: [c_minor]
-        - g_circulation: [c_tingling]
-        - g_pain_swelling: [c_significant]
-        - g_hot_joint: [c_hot]
-        - g_dvt: [c_leg_swelling]
-        - g_rest_pain: [c_severe]
-        - g_medical: [c_postop_worse]
-        - f_deformity: [c_present]
-        - f_mallet: [c_present]
-        - f_flexor: [c_present]
-        - f_middle_joint: [c_present]
-        - f_severity: [c_present]
-        - f_pinch: [c_weak]
-        - f_course: [c_lost_motion]
-    options:
-    - {id: sleep_ok, label: 'Нет, сплю нормально'}
-    - {id: p_disturbed, label: 'Да, просыпаюсь от боли'}
     - {id: unknown, label: Не знаю / не могу определить}
 
   # П: p_not_feasible, p_no_program
@@ -438,7 +410,6 @@ questions:
           - g_circulation: [c_tingling]
           - g_pain_swelling: [c_significant]
           - g_hot_joint: [c_hot]
-          - g_dvt: [c_leg_swelling]
           - g_rest_pain: [c_severe]
           - g_medical: [c_postop_worse]
           - f_deformity: [c_present]
@@ -465,7 +436,6 @@ questions:
         - g_circulation: [c_tingling]
         - g_pain_swelling: [c_significant]
         - g_hot_joint: [c_hot]
-        - g_dvt: [c_leg_swelling]
         - g_rest_pain: [c_severe]
         - g_medical: [c_postop_worse]
         - f_deformity: [c_present]
@@ -522,14 +492,6 @@ red_flags:
     reason: 'ЭКСТРЕННО: Тяжёлое общее состояние'
 
   # Э — экстренная помощь сейчас
-  - id: rf_emergency_g_dvt_breath
-    question: g_dvt
-    when:
-      in: [e_breath]
-    outcome: refer_specialist
-    reason: 'ЭКСТРЕННО: Одышка или боль в груди (в т.ч. вместе с отёком ноги)'
-
-  # Э — экстренная помощь сейчас
   - id: rf_emergency_f_deformity_open_circ
     question: f_deformity
     when:
@@ -562,11 +524,6 @@ routing:
   - when: {g_hot_joint: c_hot}
     outcome: refer_specialist
     reason_code: today_g_hot_joint
-
-  # С: Новый необъяснимый односторонний отёк ноги
-  - when: {g_dvt: c_leg_swelling}
-    outcome: refer_specialist
-    reason_code: today_g_dvt
 
   # С: Выраженная боль в покое или быстрое ухудшение
   - when: {g_rest_pain: c_severe}
@@ -618,16 +575,6 @@ routing:
     outcome: refer_specialist
     reason_code: planned_g_adult
 
-  # П: Стойкое умеренное ограничение
-  - when: {g_trend: p_moderate}
-    outcome: refer_specialist
-    reason_code: planned_g_trend
-
-  # П: Стойкие умеренные боль и отёк (промежуточный вариант, добавлен при переводе)
-  - when: {g_pain_swelling: p_moderate}
-    outcome: refer_specialist
-    reason_code: planned_g_pain_swelling
-
   # П: Устойчивая боль в покое/ночью или общие симптомы
   - when: {g_rest_pain: p_rest}
     outcome: refer_specialist
@@ -638,37 +585,10 @@ routing:
     outcome: refer_specialist
     reason_code: planned_g_medical
 
-  # П: Не удаётся локализовать боль при значительной боли
-  - when: {f_which: p_cannot_tell}
-    outcome: refer_specialist
-    reason_code: planned_f_which
-
-  # П: Сохраняются значительная боль, отёк, ограничение или нестабильность
-  - when: {f_course: p_persisting}
-    outcome: refer_specialist
-    reason_code: planned_f_course
-
-  # П: Повторный эпизод (рецидив); Остаточное ограничение после прошлой травмы
-  - when:
-      g_history: [p_recurrence, p_residual]
-    outcome: refer_specialist
-    reason_code: planned_g_history
-
   # П: Значимый сопутствующий риск — план согласовать со специалистом
   - when: {g_comorbid: p_present}
     outcome: refer_specialist
     reason_code: planned_g_comorbid
-
-  # П: Боль нарушает сон
-  - when: {g_sleep: p_disturbed}
-    outcome: refer_specialist
-    reason_code: planned_g_sleep
-
-  # П: Назначенная программа невыполнима в текущих условиях; Бот не подбирает упражнения сам — программу назначает специалист
-  - when:
-      g_program: [p_not_feasible, p_no_program]
-    outcome: refer_specialist
-    reason_code: planned_g_program
 
   # П: Домашний план возможен, только если в случае ухудшения доступна помощь
   - when: {g_help_access: p_no_access}
@@ -725,11 +645,6 @@ routing:
     reason_code: unclear_g_hot_joint
 
   # не знаю: ответ «не знаю» не равен «нет»
-  - when: {g_dvt: unknown}
-    outcome: refer_specialist
-    reason_code: unclear_g_dvt
-
-  # не знаю: ответ «не знаю» не равен «нет»
   - when: {g_rest_pain: unknown}
     outcome: refer_specialist
     reason_code: unclear_g_rest_pain
@@ -738,21 +653,6 @@ routing:
   - when: {g_medical: unknown}
     outcome: refer_specialist
     reason_code: unclear_g_medical
-
-  # не знаю: ответ «не знаю» не равен «нет»
-  - when: {g_prior_eval: unknown}
-    outcome: refer_specialist
-    reason_code: unclear_g_prior_eval
-
-  # не знаю: ответ «не знаю» не равен «нет»
-  - when: {f_which: unknown}
-    outcome: refer_specialist
-    reason_code: unclear_f_which
-
-  # не знаю: ответ «не знаю» не равен «нет»
-  - when: {f_mechanism: unknown}
-    outcome: refer_specialist
-    reason_code: unclear_f_mechanism
 
   # не знаю: ответ «не знаю» не равен «нет»
   - when: {f_deformity: unknown}
@@ -779,85 +679,57 @@ routing:
     outcome: refer_specialist
     reason_code: unclear_f_severity
 
-  # не знаю: ответ «не знаю» не равен «нет»
-  - when: {f_pinch: unknown}
-    outcome: refer_specialist
-    reason_code: unclear_f_pinch
-
-  # не знаю: ответ «не знаю» не равен «нет»
-  - when: {f_course: unknown}
-    outcome: refer_specialist
-    reason_code: unclear_f_course
-
-  # не знаю: ответ «не знаю» не равен «нет»
-  - when: {g_history: unknown}
-    outcome: refer_specialist
-    reason_code: unclear_g_history
-
-  # не знаю: ответ «не знаю» не равен «нет»
-  - when: {g_comorbid: unknown}
-    outcome: refer_specialist
-    reason_code: unclear_g_comorbid
-
-  # не знаю: ответ «не знаю» не равен «нет»
-  - when: {g_sleep: unknown}
-    outcome: refer_specialist
-    reason_code: unclear_g_sleep
-
-  # не знаю: ответ «не знаю» не равен «нет»
-  - when: {g_program: unknown}
-    outcome: refer_specialist
-    reason_code: unclear_g_program
-
-  # не знаю: ответ «не знаю» не равен «нет»
-  - when: {g_help_access: unknown}
-    outcome: refer_specialist
-    reason_code: unclear_g_help_access
-
-  # Д: диагноз этого эпизода есть, программа назначена специалистом, все ответы — Н
+  # Д: диагноз этого эпизода есть, программа назначена специалистом
   - when:
       all:
       - {g_prior_eval: this_episode}
       - {g_program: ready}
-      - g_age: [adult, minor]
-      - any:
-        - not: {g_age: minor}
-        - g_adult: [adult_involved]
-      - g_trend: [improving]
-      - g_deformity: [absent]
-      - g_circulation: [absent]
-      - g_pain_swelling: [mild_decreasing]
-      - g_hot_joint: [absent]
-      - g_dvt: [absent]
-      - g_rest_pain: [load_only, absent]
-      - g_medical: [agreed, absent]
-      - g_prior_eval: [this_episode, previous_only, not_evaluated]
-      - f_which: [thumb_base, thumb_other, finger_base, finger_middle, finger_tip]
-      - f_mechanism: [ball_tip, bent_back, bent_side, caught, fall]
-      - f_deformity: [absent]
-      - f_mallet: [absent]
-      - f_flexor: [absent]
-      - f_middle_joint: [absent]
-      - f_severity: [mild]
-      - any:
-        - not:
-            f_which: [thumb_base, thumb_other]
-        - f_pinch: [absent]
-      - f_course: [improving, too_early]
-      - g_history: [absent]
-      - g_comorbid: [absent]
-      - g_sleep: [sleep_ok]
-      - any:
-        - not: {g_prior_eval: this_episode}
-        - g_program: [ready]
-      - g_help_access: [accessible]
     outcome: recovery_plan
     plan: finger_sprain_prescribed
     reason_code: home_prescribed_program
+  # П: Стойкое умеренное ограничение
+  - when: {g_trend: p_moderate}
+    outcome: self_rehab
+    plan: self_rehab_guarded
+    reason_code: watch_g_trend
 
-  # Всё остальное (в т.ч. неразобранный свободный текст) — к специалисту
-  - {default: true, outcome: refer_specialist, reason_code: default_referral}
+  # П: Стойкие умеренные боль и отёк (промежуточный вариант, добавлен при переводе)
+  - when: {g_pain_swelling: p_moderate}
+    outcome: self_rehab
+    plan: self_rehab_guarded
+    reason_code: watch_g_pain_swelling
 
+  # П: Не удаётся локализовать боль при значительной боли
+  - when: {f_which: p_cannot_tell}
+    outcome: self_rehab
+    plan: self_rehab_guarded
+    reason_code: watch_f_which
+
+  # П: Сохраняются значительная боль, отёк, ограничение или нестабильность
+  - when: {f_course: p_persisting}
+    outcome: self_rehab
+    plan: self_rehab_guarded
+    reason_code: watch_f_course
+
+  # П: Повторный эпизод (рецидив); Остаточное ограничение после прошлой травмы
+  - when:
+      g_history: [p_recurrence, p_residual]
+    outcome: self_rehab
+    plan: self_rehab_guarded
+    reason_code: watch_g_history
+
+  # П: Назначенная программа невыполнима в текущих условиях; Бот не подбирает упражнения сам — программу назначает специалист
+  - when:
+      g_program: [p_not_feasible, p_no_program]
+    outcome: self_rehab
+    plan: self_rehab_guarded
+    reason_code: watch_g_program
+
+  # D: тревожных признаков нет — ведём самостоятельное восстановление
+  - default: true
+    outcome: self_rehab
+    plan: self_rehab_basic
+    reason_code: default_self_rehab
 plans:
   finger_sprain_prescribed:
     title: Восстановление по программе специалиста
@@ -879,6 +751,54 @@ plans:
       advance_if: {feeling: better, consecutive: 3, tasks_done_ratio_gte: 0.7}
       escalate_if: {feeling: worse, consecutive: 2}
 
+  self_rehab_basic:
+    title: Самостоятельное восстановление
+    completion_text: |
+      Программа пройдена. Это не вывод о полном выздоровлении и не допуск к тренировкам:
+      возврат к бегу, прыжкам, смене направления и контакту оценивает специалист.
+      Если боль вернулась или прогресс остановился — покажись врачу.
+    stages:
+    - key: relief
+      title: Первые дни — снять нагрузку
+      days: 3
+      description: Бытовая активность в комфортных пределах и ежедневная оценка.
+      tasks:
+      - {key: comfort_activity, text: 'Обычные бытовые дела в комфортных пределах — без тренировок, бега и игры'}
+      - {key: no_self_tests, text: 'Не проверять травму прыжками, нажатием и растяжкой'}
+      - {key: morning_check, text: 'Утром отметить боль (0–10), отёк и как даётся обычная нагрузка'}
+      advance_if: {feeling: better, consecutive: 2, min_days: 2}
+      escalate_if: {feeling: worse, consecutive: 2}
+    - key: load_return
+      title: Постепенное возвращение нагрузки
+      days: 7
+      description: Добавляем нагрузку маленькими шагами и смотрим на реакцию к утру.
+      tasks:
+      - {key: daily_activity, text: 'Полный объём бытовой активности — в пределах, где нет боли'}
+      - {key: gradual_load, text: 'Добавлять нагрузку маленькими шагами: больно или хуже к утру — шаг назад'}
+      - {key: no_sport_yet, text: 'Без тренировок, игры, прыжков и смены направления'}
+      - {key: morning_check, text: 'Утром отметить боль (0–10), отёк и как даётся нагрузка'}
+      advance_if: {feeling: better, consecutive: 3, tasks_done_ratio_gte: 0.7}
+      escalate_if: {feeling: worse, consecutive: 2}
+  self_rehab_guarded:
+    title: Самостоятельное восстановление под наблюдением
+    completion_text: |
+      Период наблюдения пройден. Это не диагноз и не допуск к тренировкам.
+      По твоим ответам были стойкие симптомы, поэтому покажись специалисту,
+      прежде чем возвращаться к спорту.
+    stages:
+    - key: guarded_watch
+      title: Осторожное наблюдение
+      days: 7
+      description: Нагрузку не наращиваем, следим за динамикой каждый день.
+      tasks:
+      - {key: comfort_activity, text: 'Только бытовая активность в комфортных пределах — без тренировок и игры'}
+      - {key: no_self_tests, text: 'Не проверять травму прыжками, нажатием и растяжкой'}
+      - {key: morning_check, text: 'Утром отметить боль (0–10), отёк и как даётся обычная нагрузка'}
+      - {key: note_change, text: 'Записать, если появился новый признак: онемение, деформация, температура, рост отёка'}
+      advance_if: {feeling: better, consecutive: 3, min_days: 3}
+      escalate_if:
+        feeling: [same, worse]
+        consecutive: 2
 texts:
   refer_specialist: |
     По твоим ответам нужен очный осмотр — самостоятельное восстановление сейчас
@@ -898,3 +818,9 @@ texts:
     Самочувствие не улучшается два чек-ина подряд — дальше по плану не идём,
     нужен очный осмотр. Если появились деформация, онемение, холодная или синюшная
     кожа либо резко нарастающая боль — вызывай экстренную помощь.
+  self_rehab_intro: |
+    Тревожных признаков в твоих ответах нет. Это не диагноз и не допуск к тренировкам.
+    Дальше — короткий план: каждый день отмечаешь задачи и самочувствие.
+    Гарантий я не даю: травму я не осматривал. Если станет хуже, появится онемение,
+    деформация, холодная или синюшная кожа, резко вырастет отёк или за несколько дней
+    не станет легче — останови план и покажись врачу.

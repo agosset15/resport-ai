@@ -8,10 +8,16 @@ from aiogram.types import CallbackQuery, Message
 from dishka.integrations.aiogram import FromDishka, inject
 
 from apps.bot import texts
-from apps.bot.flow import advance
-from apps.bot.keyboards.common import AnswerCB, options_kb
+from apps.bot.flow import advance, start_plan
+from apps.bot.keyboards.common import (
+    AnswerCB,
+    SelfRehabCB,
+    options_kb,
+    specialist_kb,
+)
 from apps.bot.states import TriageFlow
 from core.config import ContentSettings
+from core.domain.enums import EventType
 from core.services.tracker import TrackerService
 from core.services.triage import TriageService
 from core.services.user import UserService
@@ -106,3 +112,61 @@ async def answer_text(
         session_id=session.id,
         timezone=user.timezone,
     )
+
+
+@router.callback_query(TriageFlow.waiting_self_rehab_consent, SelfRehabCB.filter())
+@inject
+async def self_rehab_consent(
+    callback: CallbackQuery,
+    callback_data: SelfRehabCB,
+    state: FSMContext,
+    users: FromDishka[UserService],
+    triage: FromDishka[TriageService],
+    tracker: FromDishka[TrackerService],
+    content: FromDishka[ContentSettings],
+) -> None:
+    """Без явного согласия план самостоятельного восстановления не стартует."""
+    if callback.from_user is None or not isinstance(callback.message, Message):
+        return
+
+    user = await users.get_or_create(callback.from_user.id, callback.from_user.username)
+    session = await triage.active_session(user)
+    if session is None or session.scenario_id is None:
+        await callback.answer(texts.NO_ACTIVE_SESSION, show_alert=True)
+        await state.clear()
+        return
+
+    await callback.message.edit_reply_markup(reply_markup=None)
+
+    if not callback_data.accept:
+        await triage.request_specialist(
+            session,
+            reason_code="user_declined_self_rehab",
+            event=EventType.SELF_REHAB_DECLINED,
+        )
+        await state.clear()
+        await callback.message.answer(
+            texts.SELF_REHAB_DECLINED,
+            reply_markup=specialist_kb(content.specialist_url),
+        )
+        await callback.answer()
+        return
+
+    # Решение движка детерминировано, поэтому план берём из него, а не из состояния FSM.
+    decision = await triage.pending_decision(session)
+    if decision is None or decision.plan_key is None:
+        await callback.answer(texts.NO_ACTIVE_SESSION, show_alert=True)
+        await state.clear()
+        return
+
+    await triage.confirm_self_rehab(session)
+    await start_plan(
+        callback.message,
+        state,
+        triage=triage,
+        tracker=tracker,
+        session=session,
+        plan_key=decision.plan_key,
+        timezone=user.timezone,
+    )
+    await callback.answer()
