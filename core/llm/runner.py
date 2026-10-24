@@ -17,7 +17,7 @@ from pydantic import BaseModel, ValidationError
 
 from core.config import LlmSettings
 from core.domain.enums import LlmTask
-from core.llm.provider import LlmProvider, LlmResult, LlmUnavailable
+from core.llm.provider import LlmProvider, LlmRejected, LlmResult, LlmUnavailable
 from core.llm.schemas import json_schema_of
 from core.services.protocols import LlmCallRepository
 from infra.telemetry import get_logger
@@ -100,6 +100,11 @@ class LlmRunner:
                     ),
                     timeout=self._settings.timeout_seconds,
                 )
+                break
+            except LlmRejected as exc:
+                # Провайдер отверг запрос: те же ретраи дадут тот же 4xx, только медленнее.
+                error = f"{type(exc).__name__}: {exc}"
+                log.error("llm.rejected", task=task.value, attempt=attempt, error=error)
                 break
             except (TimeoutError, LlmUnavailable) as exc:
                 error = f"{type(exc).__name__}: {exc}"
