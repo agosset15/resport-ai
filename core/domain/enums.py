@@ -58,6 +58,21 @@ class ItemStatus(StrEnum):
     SKIPPED = "skipped"
 
 
+class SupplementStatus(StrEnum):
+    """Состояние курса добавки у пользователя."""
+
+    ACTIVE = "active"
+    DECLINED = "declined"
+    STOPPED = "stopped"
+
+
+class ReactionSeverity(StrEnum):
+    """Тяжёлая реакция ведёт к совету вызвать экстренную помощь."""
+
+    MILD = "mild"
+    SEVERE = "severe"
+
+
 class Swelling(StrEnum):
     NONE = "none"
     MILD = "mild"
@@ -109,6 +124,13 @@ class EventType(StrEnum):
     PLAN_REVISED = "plan_revised"
     PROGRESS_VIEWED = "progress_viewed"
     REPORT_BUILT = "report_built"
+    SUPPLEMENT_PROFILE_SAVED = "supplement_profile_saved"
+    SUPPLEMENT_SELECTION_SUSPENDED = "supplement_selection_suspended"
+    SUPPLEMENT_OFFERED = "supplement_offered"
+    SUPPLEMENT_ADDED = "supplement_added"
+    SUPPLEMENT_DECLINED = "supplement_declined"
+    SUPPLEMENT_STOPPED = "supplement_stopped"
+    ADVERSE_REACTION_REPORTED = "adverse_reaction_reported"
     STAGE_ADVANCED = "stage_advanced"
     PLAN_ESCALATED = "plan_escalated"
     PLAN_COMPLETED = "plan_completed"

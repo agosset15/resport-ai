@@ -8,12 +8,15 @@ from typing import Any, Protocol
 from uuid import UUID
 
 from core.domain.entities import (
+    AdverseReaction,
     Answer,
     Checkin,
     PlanItemLog,
     PlanRevision,
     RecoveryPlan,
     Session,
+    SupplementIntake,
+    SupplementProfileRecord,
     TriageResult,
     User,
     WellbeingLog,
@@ -23,8 +26,10 @@ from core.domain.enums import (
     Feeling,
     LlmTask,
     PlanStatus,
+    ReactionSeverity,
     SessionStatus,
     Sport,
+    SupplementStatus,
 )
 
 
@@ -128,6 +133,32 @@ class PlanRevisionRepository(Protocol):
     ) -> None: ...
 
     async def for_plan(self, plan_id: UUID) -> Sequence[PlanRevision]: ...
+
+
+class SupplementProfileRepository(Protocol):
+    async def upsert(self, user_id: UUID, answers: dict[str, Any]) -> None: ...
+
+    async def get(self, user_id: UUID) -> SupplementProfileRecord | None: ...
+
+
+class SupplementIntakeRepository(Protocol):
+    async def upsert(self, intake: SupplementIntake) -> None: ...
+
+    async def set_status(
+        self, user_id: UUID, supplement_id: str, status: SupplementStatus
+    ) -> None: ...
+
+    async def for_user(self, user_id: UUID) -> Sequence[SupplementIntake]: ...
+
+    async def active_for_user(self, user_id: UUID) -> Sequence[SupplementIntake]: ...
+
+
+class AdverseReactionRepository(Protocol):
+    async def add(
+        self, user_id: UUID, supplement_id: str, severity: ReactionSeverity, text: str
+    ) -> None: ...
+
+    async def for_user(self, user_id: UUID) -> Sequence[AdverseReaction]: ...
 
 
 class LlmCallRepository(Protocol):

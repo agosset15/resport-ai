@@ -22,6 +22,7 @@ from apps.bot.handlers import (
     pain_point,
     prescription,
     report,
+    supplements,
     tracker,
     triage,
 )
@@ -77,6 +78,7 @@ def build_dispatcher(container: AsyncContainer, redis: Redis | None = None) -> D
     dp.include_router(diary.router)
     dp.include_router(report.router)
     dp.include_router(prescription.router)
+    dp.include_router(supplements.router)
     dp.include_router(tracker.router)
     dp.include_router(admin.router)
     dp.include_router(errors.router)

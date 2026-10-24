@@ -10,10 +10,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import date
 
 from core.domain.entities import PlanItemLog, RecoveryPlan, WellbeingLog
 from core.domain.enums import EventType, ItemKind, ItemStatus
+from core.domain.supplement import Supplement
 from core.scenarios.snapshot import exercises_from_snapshot, plan_from_snapshot
 from core.services.dto import DailyItem, DailyPlanView, WellbeingView
 from core.services.protocols import (
@@ -43,6 +45,7 @@ class DailyPlanService:
         plan: RecoveryPlan,
         day: date | None = None,
         timezone: str | None = None,
+        supplements: Sequence[Supplement] = (),
     ) -> DailyPlanView:
         day = day or local_today(timezone)
         definition = plan_from_snapshot(plan.plan_snapshot)
@@ -93,6 +96,22 @@ class DailyPlanService:
                     kind=ItemKind.TASK,
                     key=task.key,
                     title=task.text,
+                    status=log.status if log else None,
+                    comment=log.comment if log else None,
+                )
+            )
+
+        # Добавки идут последними и отдельным видом: в процент прохождения
+        # программы они не входят (требование ТЗ), см. progress.COUNTED_KINDS.
+        for supplement in supplements:
+            log = logs.get((ItemKind.SUPPLEMENT, supplement.id))
+            items.append(
+                DailyItem(
+                    kind=ItemKind.SUPPLEMENT,
+                    key=supplement.id,
+                    title=supplement.product,
+                    dosage=supplement.intake.dose_text,
+                    limits=supplement.contraindications,
                     status=log.status if log else None,
                     comment=log.comment if log else None,
                 )
@@ -213,7 +232,12 @@ class DailyPlanService:
         )
 
     async def item_of(
-        self, plan: RecoveryPlan, kind: ItemKind, key: str, timezone: str | None = None
+        self,
+        plan: RecoveryPlan,
+        kind: ItemKind,
+        key: str,
+        timezone: str | None = None,
+        supplements: Sequence[Supplement] = (),
     ) -> DailyItem | None:
-        view = await self.today(plan, timezone=timezone)
+        view = await self.today(plan, timezone=timezone, supplements=supplements)
         return next((i for i in view.items if i.kind is kind and i.key == key), None)

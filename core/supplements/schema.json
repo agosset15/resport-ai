@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://resport.ai/schemas/supplement.json",
+  "title": "ReSport AI supplement",
+  "type": "object",
+  "required": [
+    "id",
+    "product",
+    "manufacturer",
+    "composition",
+    "rationale",
+    "benefit_limits",
+    "intake",
+    "source",
+    "updated_at"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+    "product": {
+      "type": "string",
+      "minLength": 1,
+      "description": "название конкретного продукта, а не действующего вещества"
+    },
+    "manufacturer": {"type": "string", "minLength": 1},
+    "composition": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {"type": "string", "minLength": 1},
+          "amount": {"type": "string", "minLength": 1},
+          "unit": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "excipients": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "description": "вспомогательные компоненты, указанные производителем"
+    },
+    "allergens": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "description": "аллергены, указанные производителем"
+    },
+    "rationale": {
+      "type": "string",
+      "minLength": 1,
+      "description": "основание рекомендации: зачем предлагается на курсе восстановления"
+    },
+    "benefit_limits": {
+      "type": "string",
+      "minLength": 1,
+      "description": "пределы ожидаемой пользы, без обещания ускорить восстановление"
+    },
+    "intake": {
+      "type": "object",
+      "required": ["dose_text", "duration_text"],
+      "additionalProperties": false,
+      "properties": {
+        "dose_text": {
+          "type": "string",
+          "minLength": 1,
+          "description": "дозировка дословно из источника; бот её не придумывает"
+        },
+        "duration_text": {"type": "string", "minLength": 1}
+      }
+    },
+    "contraindications": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "side_effects": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "interactions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["with_what", "note"],
+        "additionalProperties": false,
+        "properties": {
+          "with_what": {"type": "string", "minLength": 1},
+          "note": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "adverse_reaction_actions": {
+      "type": "string",
+      "minLength": 1,
+      "description": "что делать при нежелательной реакции"
+    },
+    "source": {
+      "type": "object",
+      "required": ["title", "url", "retrieved_at"],
+      "additionalProperties": false,
+      "properties": {
+        "title": {"type": "string", "minLength": 1},
+        "url": {"type": "string", "pattern": "^https?://"},
+        "retrieved_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"}
+      }
+    },
+    "updated_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+    "min_age": {"type": "integer", "minimum": 18, "maximum": 99},
+    "review_status": {"enum": ["draft", "approved"]}
+  }
+}

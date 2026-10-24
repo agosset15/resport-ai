@@ -8,18 +8,28 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, date, datetime
+from uuid import UUID
 
 from core.domain.entities import PlanItemLog, RecoveryPlan, WellbeingLog
-from core.domain.enums import EventType, ItemStatus, PlanSource, PlanStatus
+from core.domain.enums import (
+    EventType,
+    ItemKind,
+    ItemStatus,
+    PlanSource,
+    PlanStatus,
+)
+from core.domain.supplement import SupplementRegistry
 from core.scenarios.snapshot import plan_from_snapshot, snapshot_text
 from core.services.progress import build_progress
 from core.services.protocols import (
+    AdverseReactionRepository,
     EventRepository,
     PlanItemRepository,
     PlanRevisionRepository,
     SessionRepository,
+    SupplementIntakeRepository,
     WellbeingRepository,
 )
 from core.services.tracker import local_today
@@ -29,6 +39,12 @@ SWELLING_WORDS = {
     "mild": "небольшой",
     "moderate": "умеренный",
     "severe": "сильный",
+}
+
+STATUS_WORDS = {
+    "active": "принимает",
+    "declined": "отказался",
+    "stopped": "прекратил",
 }
 
 CAPACITY_WORDS = {
@@ -45,6 +61,17 @@ class WellbeingRow:
     swelling: str
     daily_capacity: str
     note: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class SupplementRow:
+    """Строка журнала приёма добавки. Включается в отчёт только по флагу пользователя."""
+
+    product: str
+    taken_days: int
+    skipped_days: int
+    status: str
+    reactions: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -67,6 +94,7 @@ class ReportView:
     wellbeing: tuple[WellbeingRow, ...] = ()
     questions: tuple[str, ...] = ()
     notes: tuple[str, ...] = field(default_factory=tuple)
+    supplements: tuple[SupplementRow, ...] = ()
 
     @property
     def filename_stem(self) -> str:
@@ -121,12 +149,18 @@ class ReportService:
         revisions: PlanRevisionRepository,
         sessions: SessionRepository,
         events: EventRepository,
+        supplements: SupplementRegistry | None = None,
+        intakes: SupplementIntakeRepository | None = None,
+        reactions: AdverseReactionRepository | None = None,
     ) -> None:
         self._items = items
         self._wellbeing = wellbeing
         self._revisions = revisions
         self._sessions = sessions
         self._events = events
+        self._supplements = supplements
+        self._intakes = intakes
+        self._reactions = reactions
 
     async def build(
         self,
@@ -207,6 +241,12 @@ class ReportService:
         )
 
         session = await self._sessions.get(plan.session_id)
+        if session is not None:
+            view = replace(
+                view,
+                supplements=await self._supplement_rows(session.user_id, item_logs),
+            )
+
         await self._events.add(
             EventType.REPORT_BUILT,
             user_id=session.user_id if session else None,
@@ -214,6 +254,45 @@ class ReportService:
             payload={"plan_id": str(plan.id), "days": days},
         )
         return view
+
+    async def _supplement_rows(
+        self, user_id: UUID, item_logs: Sequence[PlanItemLog]
+    ) -> tuple[SupplementRow, ...]:
+        """Журнал приёма добавок. Только те курсы, которые пользователь разрешил включать."""
+        if self._intakes is None or self._supplements is None:
+            return ()
+
+        all_reactions = (
+            await self._reactions.for_user(user_id) if self._reactions is not None else []
+        )
+        rows: list[SupplementRow] = []
+        for intake in await self._intakes.for_user(user_id):
+            if not intake.include_in_report:
+                continue
+            supplement = self._supplements.get(intake.supplement_id)
+            if supplement is None:
+                continue
+            logs = [
+                log
+                for log in item_logs
+                if log.item_kind is ItemKind.SUPPLEMENT and log.item_key == intake.supplement_id
+            ]
+            rows.append(
+                SupplementRow(
+                    product=supplement.product,
+                    taken_days=sum(1 for log in logs if log.status is ItemStatus.DONE),
+                    skipped_days=sum(1 for log in logs if log.status is ItemStatus.SKIPPED),
+                    status=STATUS_WORDS.get(intake.status.value, intake.status.value),
+                    reactions=tuple(
+                        f"{reaction.created_at:%d.%m}: {reaction.text}"
+                        if reaction.created_at
+                        else reaction.text
+                        for reaction in all_reactions
+                        if reaction.supplement_id == intake.supplement_id
+                    ),
+                )
+            )
+        return tuple(rows)
 
 
 def report_markdown(view: ReportView) -> str:
@@ -274,6 +353,27 @@ def report_markdown(view: ReportView) -> str:
     if view.notes:
         lines += ["", "## Комментарии к упражнениям", ""]
         lines += [f"- {note}" for note in view.notes]
+
+    if view.supplements:
+        lines += ["", "## Добавки", ""]
+        lines.append("| Продукт | Принято дней | Пропущено | Статус |")
+        lines.append("|---|---|---|---|")
+        for supplement_row in view.supplements:
+            lines.append(
+                f"| {supplement_row.product} | {supplement_row.taken_days} "
+                f"| {supplement_row.skipped_days} | {supplement_row.status} |"
+            )
+        reactions = [
+            text for supplement_row in view.supplements for text in supplement_row.reactions
+        ]
+        if reactions:
+            lines += ["", "Сообщения о нежелательных реакциях:"]
+            lines += [f"- {text}" for text in reactions]
+        lines += [
+            "",
+            "Приём добавок в процент прохождения программы не входит и учитывается",
+            "отдельно.",
+        ]
 
     lines += ["", "## Вопросы к приёму", ""]
     lines += [f"{index}. {q}" for index, q in enumerate(view.questions, start=1)]

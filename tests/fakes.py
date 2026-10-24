@@ -8,12 +8,15 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from core.domain.entities import (
+    AdverseReaction,
     Answer,
     Checkin,
     PlanItemLog,
     PlanRevision,
     RecoveryPlan,
     Session,
+    SupplementIntake,
+    SupplementProfileRecord,
     TriageResult,
     User,
     WellbeingLog,
@@ -23,8 +26,10 @@ from core.domain.enums import (
     Feeling,
     LlmTask,
     PlanStatus,
+    ReactionSeverity,
     SessionStatus,
     Sport,
+    SupplementStatus,
 )
 from core.llm.provider import LlmResult, LlmUnavailable
 
@@ -257,6 +262,76 @@ class FakePlanRevisionRepository:
 
     async def for_plan(self, plan_id: UUID) -> Sequence[PlanRevision]:
         return [i for i in self.items if i.plan_id == plan_id]
+
+
+class FakeSupplementProfileRepository:
+    def __init__(self) -> None:
+        self.records: dict[UUID, dict[str, Any]] = {}
+
+    async def upsert(self, user_id: UUID, answers: dict[str, Any]) -> None:
+        self.records[user_id] = dict(answers)
+
+    async def get(self, user_id: UUID) -> SupplementProfileRecord | None:
+        answers = self.records.get(user_id)
+        if answers is None:
+            return None
+        return SupplementProfileRecord(
+            id=uuid4(), user_id=user_id, answers=dict(answers), updated_at=datetime.now()
+        )
+
+
+class FakeSupplementIntakeRepository:
+    def __init__(self) -> None:
+        self.items: list[SupplementIntake] = []
+
+    async def upsert(self, intake: SupplementIntake) -> None:
+        self.items = [
+            i
+            for i in self.items
+            if (i.user_id, i.supplement_id) != (intake.user_id, intake.supplement_id)
+        ]
+        intake.id = uuid4()
+        intake.started_at = intake.started_at or datetime.now()
+        self.items.append(intake)
+
+    async def set_status(self, user_id: UUID, supplement_id: str, status: SupplementStatus) -> None:
+        await self.upsert(
+            SupplementIntake(
+                user_id=user_id,
+                supplement_id=supplement_id,
+                status=status,
+                stopped_at=datetime.now() if status is not SupplementStatus.ACTIVE else None,
+            )
+        )
+
+    async def for_user(self, user_id: UUID) -> Sequence[SupplementIntake]:
+        return [i for i in self.items if i.user_id == user_id]
+
+    async def active_for_user(self, user_id: UUID) -> Sequence[SupplementIntake]:
+        return [
+            i for i in self.items if i.user_id == user_id and i.status is SupplementStatus.ACTIVE
+        ]
+
+
+class FakeAdverseReactionRepository:
+    def __init__(self) -> None:
+        self.items: list[AdverseReaction] = []
+
+    async def add(
+        self, user_id: UUID, supplement_id: str, severity: ReactionSeverity, text: str
+    ) -> None:
+        self.items.append(
+            AdverseReaction(
+                user_id=user_id,
+                supplement_id=supplement_id,
+                severity=severity,
+                text=text,
+                created_at=datetime.now(),
+            )
+        )
+
+    async def for_user(self, user_id: UUID) -> Sequence[AdverseReaction]:
+        return [i for i in self.items if i.user_id == user_id]
 
 
 class FakeEventRepository:

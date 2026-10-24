@@ -13,6 +13,13 @@ class TriageFlow(StatesGroup):
     waiting_self_rehab_consent = State()
 
 
+class SupplementFlow(StatesGroup):
+    """Анкета перед подбором БАДов и сообщение о реакции."""
+
+    asking = State()
+    reporting_reaction = State()
+
+
 class PrescriptionFlow(StatesGroup):
     """Ввод назначения специалиста и подтверждение разбора."""
 

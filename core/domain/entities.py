@@ -16,8 +16,10 @@ from core.domain.enums import (
     Outcome,
     PlanSource,
     PlanStatus,
+    ReactionSeverity,
     SessionStatus,
     Sport,
+    SupplementStatus,
     Swelling,
 )
 
@@ -86,6 +88,41 @@ class RecoveryPlan:
     stage_started_at: datetime | None = None
     started_at: datetime | None = None
     finished_at: datetime | None = None
+
+
+@dataclass(slots=True)
+class SupplementProfileRecord:
+    """Ответы анкеты перед подбором. Хранятся как есть, разбор — в core/supplements."""
+
+    user_id: UUID
+    answers: dict[str, Any]
+    id: UUID | None = None
+    updated_at: datetime | None = None
+
+
+@dataclass(slots=True)
+class SupplementIntake:
+    """Курс добавки у пользователя. Отметки приёма живут в plan_item_logs."""
+
+    user_id: UUID
+    supplement_id: str
+    status: SupplementStatus = SupplementStatus.ACTIVE
+    include_in_report: bool = True
+    started_at: datetime | None = None
+    stopped_at: datetime | None = None
+    id: UUID | None = None
+
+
+@dataclass(slots=True)
+class AdverseReaction:
+    """Сообщение о нежелательной реакции. Хранится всегда, даже если приём продолжен."""
+
+    user_id: UUID
+    supplement_id: str
+    severity: ReactionSeverity
+    text: str
+    id: UUID | None = None
+    created_at: datetime | None = None
 
 
 @dataclass(slots=True)

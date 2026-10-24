@@ -27,8 +27,10 @@ from core.domain.enums import (
     Outcome,
     PlanSource,
     PlanStatus,
+    ReactionSeverity,
     SessionStatus,
     Sport,
+    SupplementStatus,
     Swelling,
 )
 from infra.db.engine import build_engine, build_session_factory
@@ -48,6 +50,8 @@ ENUM_TYPES = (
     ("item_status", ItemStatus),
     ("swelling_enum", Swelling),
     ("daily_capacity", DailyCapacity),
+    ("supplement_status", SupplementStatus),
+    ("reaction_severity", ReactionSeverity),
 )
 
 

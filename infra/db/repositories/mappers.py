@@ -3,23 +3,29 @@
 from __future__ import annotations
 
 from core.domain.entities import (
+    AdverseReaction,
     Answer,
     Checkin,
     PlanItemLog,
     PlanRevision,
     RecoveryPlan,
     Session,
+    SupplementIntake,
+    SupplementProfileRecord,
     TriageResult,
     User,
     WellbeingLog,
 )
 from infra.db.models import (
+    AdverseReactionModel,
     CheckinModel,
     PlanItemLogModel,
     PlanRevisionModel,
     RecoveryPlanModel,
     SessionAnswerModel,
     SessionModel,
+    SupplementIntakeModel,
+    SupplementProfileModel,
     TriageResultModel,
     UserModel,
     WellbeingLogModel,
@@ -127,6 +133,38 @@ def to_plan_revision(model: PlanRevisionModel) -> PlanRevision:
         version=model.version,
         snapshot=dict(model.snapshot or {}),
         reason=model.reason,
+        created_at=model.created_at,
+    )
+
+
+def to_supplement_profile(model: SupplementProfileModel) -> SupplementProfileRecord:
+    return SupplementProfileRecord(
+        id=model.id,
+        user_id=model.user_id,
+        answers=dict(model.answers or {}),
+        updated_at=model.updated_at,
+    )
+
+
+def to_supplement_intake(model: SupplementIntakeModel) -> SupplementIntake:
+    return SupplementIntake(
+        id=model.id,
+        user_id=model.user_id,
+        supplement_id=model.supplement_id,
+        status=model.status,
+        include_in_report=model.include_in_report,
+        started_at=model.started_at,
+        stopped_at=model.stopped_at,
+    )
+
+
+def to_adverse_reaction(model: AdverseReactionModel) -> AdverseReaction:
+    return AdverseReaction(
+        id=model.id,
+        user_id=model.user_id,
+        supplement_id=model.supplement_id,
+        severity=model.severity,
+        text=model.text,
         created_at=model.created_at,
     )
 

@@ -23,6 +23,7 @@ from apps.bot.states import DiaryFlow
 from core.domain.enums import ItemKind, ItemStatus
 from core.services.daily import DailyPlanService
 from core.services.dto import DailyItem, DailyPlanView
+from core.services.supplements import SupplementService
 from core.services.tracker import TrackerService
 from core.services.user import UserService
 
@@ -47,6 +48,8 @@ def _item_card(item: DailyItem) -> str:
         lines.append(texts.ITEM_CARD_LIMITS.format(limits=limits))
     if item.lookup_hint:
         lines.append(texts.ITEM_CARD_LOOKUP.format(hint=item.lookup_hint))
+    if item.kind is ItemKind.SUPPLEMENT:
+        lines.append(texts.ITEM_CARD_SUPPLEMENT_NOTE)
     if item.status is not None:
         lines.append(texts.ITEM_CARD_STATUS.format(status=texts.ITEM_STATUS_LABELS[item.status]))
     if item.comment:
@@ -65,6 +68,7 @@ async def today_command(
     users: FromDishka[UserService],
     tracker: FromDishka[TrackerService],
     daily: FromDishka[DailyPlanService],
+    supplements: FromDishka[SupplementService],
 ) -> None:
     if message.from_user is None:
         return
@@ -73,7 +77,9 @@ async def today_command(
     if plan is None:
         await message.answer(texts.NO_ACTIVE_PLAN)
         return
-    await _send_daily(message, await daily.today(plan, timezone=user.timezone))
+    active = await supplements.active_supplements(user)
+    view = await daily.today(plan, timezone=user.timezone, supplements=active)
+    await _send_daily(message, view)
 
 
 @router.callback_query(DayCB.filter(F.action == "refresh"))
@@ -83,6 +89,7 @@ async def refresh_daily(
     users: FromDishka[UserService],
     tracker: FromDishka[TrackerService],
     daily: FromDishka[DailyPlanService],
+    supplements: FromDishka[SupplementService],
 ) -> None:
     if callback.from_user is None or not isinstance(callback.message, Message):
         return
@@ -91,7 +98,8 @@ async def refresh_daily(
     if plan is None:
         await callback.answer(texts.NO_ACTIVE_PLAN, show_alert=True)
         return
-    view = await daily.today(plan, timezone=user.timezone)
+    active = await supplements.active_supplements(user)
+    view = await daily.today(plan, timezone=user.timezone, supplements=active)
     await callback.message.edit_text(texts.daily_text(view), reply_markup=daily_kb(view))
     await callback.answer()
 
@@ -104,6 +112,7 @@ async def open_item(
     users: FromDishka[UserService],
     tracker: FromDishka[TrackerService],
     daily: FromDishka[DailyPlanService],
+    supplements: FromDishka[SupplementService],
 ) -> None:
     if callback.from_user is None or not isinstance(callback.message, Message):
         return
@@ -114,7 +123,10 @@ async def open_item(
         return
 
     kind = ItemKind(callback_data.kind)
-    item = await daily.item_of(plan, kind, callback_data.key, timezone=user.timezone)
+    active = await supplements.active_supplements(user)
+    item = await daily.item_of(
+        plan, kind, callback_data.key, timezone=user.timezone, supplements=active
+    )
     if item is None:
         await callback.answer(texts.ITEM_GONE, show_alert=True)
         return
@@ -131,6 +143,7 @@ async def mark_item(
     users: FromDishka[UserService],
     tracker: FromDishka[TrackerService],
     daily: FromDishka[DailyPlanService],
+    supplements: FromDishka[SupplementService],
 ) -> None:
     if callback.from_user is None or not isinstance(callback.message, Message):
         return
@@ -144,7 +157,10 @@ async def mark_item(
     status = STATUS_BY_ACTION[callback_data.action]
     await daily.mark(plan, kind=kind, key=callback_data.key, status=status, timezone=user.timezone)
 
-    item = await daily.item_of(plan, kind, callback_data.key, timezone=user.timezone)
+    active = await supplements.active_supplements(user)
+    item = await daily.item_of(
+        plan, kind, callback_data.key, timezone=user.timezone, supplements=active
+    )
     if item is not None:
         await callback.message.edit_text(_item_card(item), reply_markup=item_kb(item))
     await callback.answer(texts.ITEM_MARKED.format(status=texts.ITEM_STATUS_LABELS[status]))
@@ -170,6 +186,7 @@ async def save_item_comment(
     users: FromDishka[UserService],
     tracker: FromDishka[TrackerService],
     daily: FromDishka[DailyPlanService],
+    supplements: FromDishka[SupplementService],
 ) -> None:
     if message.from_user is None or message.text is None:
         return
@@ -191,4 +208,5 @@ async def save_item_comment(
         timezone=user.timezone,
     )
     await message.answer(texts.ITEM_COMMENT_SAVED)
-    await _send_daily(message, await daily.today(plan, timezone=user.timezone))
+    active = await supplements.active_supplements(user)
+    await _send_daily(message, await daily.today(plan, timezone=user.timezone, supplements=active))

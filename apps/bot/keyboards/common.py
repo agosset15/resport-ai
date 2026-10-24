@@ -11,6 +11,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from apps.bot.texts import FEELING_LABELS, SPORT_LABELS
 from core.domain.enums import Feeling, Sport
 from core.domain.scenario import Option, PlanTask
+from core.domain.supplement import Supplement
 from core.services.dto import DailyItem, DailyPlanView, ScenarioChoice
 
 
@@ -57,6 +58,11 @@ class ItemCB(CallbackData, prefix="item"):
 class WellbeingCB(CallbackData, prefix="wb"):
     field: str  # swelling | capacity
     value: str
+
+
+class SupplementCB(CallbackData, prefix="supp"):
+    action: str  # yes | no | open | add | skip | reaction
+    supplement_id: str = ""
 
 
 class PrescriptionCB(CallbackData, prefix="rx"):
@@ -180,6 +186,50 @@ def item_kb(item: DailyItem) -> InlineKeyboardMarkup:
         )
     builder.button(text=ITEM_REFRESH_BUTTON, callback_data=DayCB(action="refresh"))
     builder.adjust(3, 1, 1)
+    return builder.as_markup()
+
+
+def yes_no_kb() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text="Да", callback_data=SupplementCB(action="yes"))
+    builder.button(text="Нет", callback_data=SupplementCB(action="no"))
+    builder.adjust(2)
+    return builder.as_markup()
+
+
+def supplement_list_kb(supplements: Sequence[Supplement]) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    for supplement in supplements:
+        builder.button(
+            text=supplement.product[:48],
+            callback_data=SupplementCB(action="open", supplement_id=supplement.id),
+        )
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def supplement_card_kb(supplement: Supplement) -> InlineKeyboardMarkup:
+    """Три кнопки из ТЗ: добавить в план, не принимать, сообщить о реакции."""
+    from apps.bot.texts import (
+        SUPPLEMENT_ADD_BUTTON,
+        SUPPLEMENT_REACTION_BUTTON,
+        SUPPLEMENT_SKIP_BUTTON,
+    )
+
+    builder = InlineKeyboardBuilder()
+    builder.button(
+        text=SUPPLEMENT_ADD_BUTTON,
+        callback_data=SupplementCB(action="add", supplement_id=supplement.id),
+    )
+    builder.button(
+        text=SUPPLEMENT_SKIP_BUTTON,
+        callback_data=SupplementCB(action="skip", supplement_id=supplement.id),
+    )
+    builder.button(
+        text=SUPPLEMENT_REACTION_BUTTON,
+        callback_data=SupplementCB(action="reaction", supplement_id=supplement.id),
+    )
+    builder.adjust(1)
     return builder.as_markup()
 
 

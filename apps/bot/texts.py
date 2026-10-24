@@ -14,8 +14,10 @@ from core.domain.enums import (
     Sport,
     Swelling,
 )
+from core.domain.supplement import Supplement
 from core.services.dto import DailyPlanView
 from core.services.progress import DayMark, ProgressView
+from core.supplements.matcher import StopReason
 
 SPORT_LABELS: dict[Sport, str] = {
     Sport.FOOTBALL: "⚽ Футбол",
@@ -71,6 +73,120 @@ REFER_SPECIALIST_FOOTER = (
     "\n\nЭто не диагноз. Очный осмотр нужен, чтобы понять, что именно произошло."
 )
 SPECIALIST_BUTTON = "Обратиться к специалисту"
+
+SUPPLEMENT_STOP_LABELS: dict[StopReason, str] = {
+    StopReason.PROFILE_INCOMPLETE: "часть анкеты не заполнена",
+    StopReason.AGE_UNKNOWN: "не указан возраст",
+    StopReason.MINOR: "подбор добавок доступен только совершеннолетним",
+    StopReason.PREGNANCY: "беременность",
+    StopReason.BREASTFEEDING: "грудное вскармливание",
+    StopReason.UPCOMING_SURGERY: "предстоящая операция",
+    StopReason.MEDICATIONS: "принимаются лекарства — возможно взаимодействие",
+}
+
+SUPPLEMENT_INTRO = (
+    "<b>Добавки на период восстановления</b>\n\n"
+    "Сначала несколько вопросов — без них подбирать нельзя. Приём добавок "
+    "добровольный: это не лечение и не часть обязательной программы.\n\n"
+    "<i>Добавки не проходят проверку на безопасность и эффективность до продажи — "
+    "за это отвечает производитель, а не регулятор. Они могут взаимодействовать с "
+    "лекарствами, искажать результаты анализов и быть опасными во время операции. "
+    "Источник предупреждений: FDA, «FDA 101: Dietary Supplements».</i>"
+)
+SUPPLEMENT_QUESTION = "<b>Вопрос {number} из {total}</b>\n\n{text}"
+SUPPLEMENT_QUESTION_HINT = "\n\n<i>{hint}</i>"
+SUPPLEMENT_NEED_NUMBER = "Нужно число — сколько тебе полных лет."
+SUPPLEMENT_NEED_BUTTON = "Ответь кнопкой, пожалуйста."
+SUPPLEMENT_PROFILE_SAVED = "Записал ответы."
+SUPPLEMENT_NO_PROFILE = "Сначала пройди анкету: /supplements."
+
+SUPPLEMENT_SUSPENDED = (
+    "<b>Подбор приостановлен</b>\n\n"
+    "Причины:\n{reasons}\n\n"
+    "В таких случаях я не подбираю добавки сам — это нужно обсудить со специалистом. "
+    "Подтверждение, что ты прочитал предупреждение, этого не меняет."
+)
+SUPPLEMENT_NOTHING_SUITABLE = (
+    "Подходящего варианта нет — прямо говорю об этом, а не предлагаю хоть что-нибудь.\n\n"
+    "База добавок заполняется заказчиком и проверяется врачом; пока в ней нет "
+    "подтверждённых записей, подбор ничего не предложит."
+)
+SUPPLEMENT_LIST = "Вот что подходит по твоим ответам. Открой карточку, чтобы прочитать детали:"
+SUPPLEMENT_ACTIVE_LIST = "Добавки, которые ты принимаешь:"
+SUPPLEMENT_NONE_ACTIVE = "Сейчас ты не принимаешь добавок. Подобрать — /supplements."
+SUPPLEMENT_GONE = "Эта запись больше недоступна."
+
+SUPPLEMENT_ADD_BUTTON = "Добавить в план"
+SUPPLEMENT_SKIP_BUTTON = "Не принимать"
+SUPPLEMENT_REACTION_BUTTON = "Сообщить о реакции"
+SUPPLEMENT_ADDED = (
+    "Добавил «{product}» в план. Отмечать приём можно в /today.\n\n"
+    "Приём добавок не влияет на процент прохождения программы: он считается отдельно."
+)
+SUPPLEMENT_DECLINED = (
+    "Записал отказ. Это не снижает процент прохождения программы — добавки в него не входят."
+)
+SUPPLEMENT_ASK_REACTION = "Опиши, что произошло: что почувствовал, когда, после какой дозы."
+SUPPLEMENT_REACTION_MILD = (
+    "<b>Записал и остановил приём.</b>\n\n"
+    "Прекрати принимать эту добавку и обратись за медицинской помощью или советом — "
+    "так советует FDA при любой нежелательной реакции.\n\n"
+    "Запись попадёт в отчёт, её можно показать врачу."
+)
+SUPPLEMENT_REACTION_SEVERE = (
+    "<b>Похоже на тяжёлую реакцию. Вызывай экстренную помощь.</b>\n\n"
+    "Приём я остановил и записал всё в дневник. Не жди, пока станет лучше, "
+    "и не принимай добавку снова.\n\n"
+    "Если трудно дышать, отекает лицо или горло, появилась сыпь по всему телу, "
+    "резкая слабость или спутанность — это повод для экстренной помощи."
+)
+
+
+def supplement_card(supplement: Supplement) -> str:
+    """Карточка БАДа: всё, что требует ТЗ, включая источник и дату обновления."""
+    lines = [
+        f"<b>{supplement.product}</b>",
+        f"Производитель: {supplement.manufacturer}",
+        "",
+        "<b>Состав</b>",
+    ]
+    lines += [f"• {component.human()}" for component in supplement.composition]
+    if supplement.excipients:
+        lines.append("Вспомогательные компоненты: " + ", ".join(supplement.excipients))
+    if supplement.allergens:
+        lines.append("<b>Аллергены:</b> " + ", ".join(supplement.allergens))
+
+    lines += ["", "<b>Зачем предлагается</b>", supplement.rationale]
+    lines += ["", "<b>Чего ожидать не стоит</b>", supplement.benefit_limits]
+    lines += [
+        "",
+        "<b>Как принимать</b>",
+        supplement.intake.dose_text,
+        f"Длительность: {supplement.intake.duration_text}",
+    ]
+
+    if supplement.contraindications:
+        lines += ["", "<b>Противопоказания</b>"]
+        lines += [f"• {item}" for item in supplement.contraindications]
+    if supplement.side_effects:
+        lines += ["", "<b>Возможные побочные эффекты</b>"]
+        lines += [f"• {item}" for item in supplement.side_effects]
+    if supplement.interactions:
+        lines += ["", "<b>Взаимодействия</b>"]
+        lines += [f"• {i.with_what}: {i.note}" for i in supplement.interactions]
+    if supplement.adverse_reaction_actions:
+        lines += ["", "<b>Если стало плохо</b>", supplement.adverse_reaction_actions]
+
+    lines += [
+        "",
+        f"<i>Источник: {supplement.source.title} ({supplement.source.url})</i>",
+        f"<i>Сведения получены: {supplement.source.retrieved_at}, "
+        f"запись обновлена: {supplement.updated_at}</i>",
+    ]
+    if supplement.needs_review:
+        lines.append("<i>⚠️ Запись не подтверждена врачом — показана только для проверки.</i>")
+    return "\n".join(lines)
+
 
 PRESCRIPTION_ASK = (
     "<b>План по назначению специалиста</b>\n\n"
@@ -312,6 +428,9 @@ DAILY_WELLBEING_DONE_BUTTON = "Самочувствие записано ✓"
 
 ITEM_CARD_TITLE = "<b>{title}</b>"
 ITEM_CARD_DOSAGE = "\n<b>Сколько:</b> {dosage}"
+ITEM_CARD_SUPPLEMENT_NOTE = (
+    "\n<i>Это приём добавки. Он не влияет на процент прохождения программы.</i>"
+)
 ITEM_CARD_LIMITS = "\n<b>Ограничения:</b>\n{limits}"
 ITEM_CARD_LOOKUP = "\n<i>{hint}</i>"
 ITEM_CARD_STATUS = "\n\nОтметка: {status}"
@@ -382,6 +501,8 @@ HELP = (
     "/progress — мой прогресс\n"
     "/report — отчёт за период\n"
     "/prescription — план по назначению врача\n"
+    "/supplements — подбор добавок\n"
+    "/my_supplements — что принимаю\n"
     "/checkin — отметить день\n"
     "/reminder — изменить время напоминания\n"
     "/help — эта справка\n\n"

@@ -34,8 +34,10 @@ from core.domain.enums import (
     Outcome,
     PlanSource,
     PlanStatus,
+    ReactionSeverity,
     SessionStatus,
     Sport,
+    SupplementStatus,
     Swelling,
 )
 from infra.db.base import Base
@@ -56,6 +58,8 @@ plan_source_enum = SAEnum(PlanSource, name="plan_source", values_callable=_value
 item_kind_enum = SAEnum(ItemKind, name="item_kind", values_callable=_values)
 item_status_enum = SAEnum(ItemStatus, name="item_status", values_callable=_values)
 swelling_enum = SAEnum(Swelling, name="swelling_enum", values_callable=_values)
+supplement_status_enum = SAEnum(SupplementStatus, name="supplement_status", values_callable=_values)
+reaction_severity_enum = SAEnum(ReactionSeverity, name="reaction_severity", values_callable=_values)
 daily_capacity_enum = SAEnum(DailyCapacity, name="daily_capacity", values_callable=_values)
 
 
@@ -273,6 +277,68 @@ class PlanRevisionModel(Base):
     )
 
     __table_args__ = (UniqueConstraint("plan_id", "version", name="uq_plan_version"),)
+
+
+class SupplementProfileModel(Base):
+    __tablename__ = "supplement_profiles"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        unique=True,
+        nullable=False,
+    )
+    answers: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class SupplementIntakeModel(Base):
+    __tablename__ = "supplement_intakes"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    supplement_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[SupplementStatus] = mapped_column(
+        supplement_status_enum, default=SupplementStatus.ACTIVE, nullable=False
+    )
+    include_in_report: Mapped[bool] = mapped_column(default=True, nullable=False)
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    stopped_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "supplement_id", name="uq_intake_per_supplement"),
+        Index("ix_intakes_user_status", "user_id", "status"),
+    )
+
+
+class AdverseReactionModel(Base):
+    __tablename__ = "adverse_reactions"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    supplement_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    severity: Mapped[ReactionSeverity] = mapped_column(reaction_severity_enum, nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    __table_args__ = (Index("ix_reactions_user", "user_id", "created_at"),)
 
 
 class LlmCallModel(Base):

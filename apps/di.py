@@ -20,6 +20,7 @@ from core.config import (
 )
 from core.domain.exercise import ExerciseLibrary
 from core.domain.scenario import ScenarioRegistry
+from core.domain.supplement import SupplementRegistry
 from core.llm.provider import LlmProvider
 from core.llm.runner import LlmCache, LlmRunner
 from core.scenarios.exercises import load_library
@@ -28,6 +29,7 @@ from core.services.daily import DailyPlanService
 from core.services.diary_service import DiaryService
 from core.services.export import ExportService
 from core.services.protocols import (
+    AdverseReactionRepository,
     CheckinRepository,
     EventRepository,
     LlmCallRepository,
@@ -35,14 +37,18 @@ from core.services.protocols import (
     PlanRepository,
     PlanRevisionRepository,
     SessionRepository,
+    SupplementIntakeRepository,
+    SupplementProfileRepository,
     TriageRepository,
     UserRepository,
     WellbeingRepository,
 )
 from core.services.report import ReportService
+from core.services.supplements import SupplementService
 from core.services.tracker import TrackerService
 from core.services.triage import TriageService
 from core.services.user import UserService
+from core.supplements.loader import load_supplements
 from infra.cache.llm_cache import RedisLlmCache
 from infra.cache.redis import build_redis
 from infra.db.engine import build_engine, build_session_factory
@@ -55,6 +61,11 @@ from infra.db.repositories.diary import (
 from infra.db.repositories.export import SqlExportRepository
 from infra.db.repositories.plans import SqlCheckinRepository, SqlPlanRepository
 from infra.db.repositories.sessions import SqlSessionRepository
+from infra.db.repositories.supplements import (
+    SqlAdverseReactionRepository,
+    SqlSupplementIntakeRepository,
+    SqlSupplementProfileRepository,
+)
 from infra.db.repositories.triage import SqlTriageRepository
 from infra.db.repositories.users import SqlUserRepository
 from infra.llm.clients import build_provider
@@ -112,6 +123,12 @@ class InfraProvider(Provider):
         await client.aclose()
 
     @provide
+    def supplements(self) -> SupplementRegistry:
+        """База БАДов. Пустая или неподписанная база — рабочее состояние:
+        подбор тогда честно ничего не предлагает."""
+        return load_supplements()
+
+    @provide
     def exercise_library(self) -> ExerciseLibrary:
         """Библиотека упражнений: ревьюится врачом отдельно от сценариев."""
         return load_library()
@@ -152,6 +169,11 @@ class RepositoryProvider(Provider):
     plan_items = provide(SqlPlanItemRepository, provides=PlanItemRepository)
     wellbeing = provide(SqlWellbeingRepository, provides=WellbeingRepository)
     plan_revisions = provide(SqlPlanRevisionRepository, provides=PlanRevisionRepository)
+    supplement_profiles = provide(
+        SqlSupplementProfileRepository, provides=SupplementProfileRepository
+    )
+    supplement_intakes = provide(SqlSupplementIntakeRepository, provides=SupplementIntakeRepository)
+    adverse_reactions = provide(SqlAdverseReactionRepository, provides=AdverseReactionRepository)
     llm_calls = provide(SqlLlmCallRepository, provides=LlmCallRepository)
     events = provide(SqlEventRepository, provides=EventRepository)
     export_source = provide(SqlExportRepository)
@@ -176,6 +198,7 @@ class ServiceProvider(Provider):
     daily_service = provide(DailyPlanService)
     diary_service = provide(DiaryService)
     report_service = provide(ReportService)
+    supplement_service = provide(SupplementService)
 
     @provide
     def export_service(self, source: SqlExportRepository) -> ExportService:
