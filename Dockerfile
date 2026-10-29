@@ -20,4 +20,14 @@ RUN uv sync --frozen --no-dev --no-install-project
 COPY . .
 RUN uv sync --frozen --no-dev
 
+# Метаданные сборки из CI (docker.yml); объявлены в конце, чтобы не ломать кэш слоёв.
+ARG BUILD_TIME=unknown \
+    BUILD_BRANCH=unknown \
+    BUILD_COMMIT=unknown \
+    BUILD_TAG=dev
+ENV BUILD_TIME=${BUILD_TIME} \
+    BUILD_BRANCH=${BUILD_BRANCH} \
+    BUILD_COMMIT=${BUILD_COMMIT} \
+    BUILD_TAG=${BUILD_TAG}
+
 CMD ["uv", "run", "python", "-m", "apps.api"]
