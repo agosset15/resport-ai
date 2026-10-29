@@ -149,9 +149,9 @@ class ReportService:
         revisions: PlanRevisionRepository,
         sessions: SessionRepository,
         events: EventRepository,
-        supplements: SupplementRegistry | None = None,
-        intakes: SupplementIntakeRepository | None = None,
-        reactions: AdverseReactionRepository | None = None,
+        supplements: SupplementRegistry,
+        intakes: SupplementIntakeRepository,
+        reactions: AdverseReactionRepository,
     ) -> None:
         self._items = items
         self._wellbeing = wellbeing
@@ -259,12 +259,7 @@ class ReportService:
         self, user_id: UUID, item_logs: Sequence[PlanItemLog]
     ) -> tuple[SupplementRow, ...]:
         """Журнал приёма добавок. Только те курсы, которые пользователь разрешил включать."""
-        if self._intakes is None or self._supplements is None:
-            return ()
-
-        all_reactions = (
-            await self._reactions.for_user(user_id) if self._reactions is not None else []
-        )
+        all_reactions = await self._reactions.for_user(user_id)
         rows: list[SupplementRow] = []
         for intake in await self._intakes.for_user(user_id):
             if not intake.include_in_report:

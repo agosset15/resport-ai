@@ -17,6 +17,7 @@ from core.domain.enums import (
     Swelling,
 )
 from core.domain.scenario import ScenarioRegistry
+from core.domain.supplement import SupplementRegistry
 from core.scenarios.exercises import load_library
 from core.scenarios.snapshot import (
     SNAPSHOT_FORMAT,
@@ -28,10 +29,12 @@ from core.services.daily import DailyPlanService
 from core.services.dto import WellbeingView
 from core.services.report import ReportService, build_questions, report_markdown
 from tests.fakes import (
+    FakeAdverseReactionRepository,
     FakeEventRepository,
     FakePlanItemRepository,
     FakePlanRevisionRepository,
     FakeSessionRepository,
+    FakeSupplementIntakeRepository,
     FakeWellbeingRepository,
 )
 
@@ -72,7 +75,14 @@ class Harness:
         self.events = FakeEventRepository()
         self.daily = DailyPlanService(self.items, self.wellbeing, self.sessions, self.events)
         self.reports = ReportService(
-            self.items, self.wellbeing, self.revisions, self.sessions, self.events
+            self.items,
+            self.wellbeing,
+            self.revisions,
+            self.sessions,
+            self.events,
+            SupplementRegistry(supplements={}),
+            FakeSupplementIntakeRepository(),
+            FakeAdverseReactionRepository(),
         )
 
 
