@@ -92,16 +92,44 @@ async def test_db_enum_matches_domain(
     )
 
 
+#: Приведение типа пишем через CAST, а не через `::`: в `text()` двоеточие — это
+#: маркер bind-параметра, поэтому `:value::outcome_enum` вообще не распознаётся как
+#: параметр и в Postgres уезжает литеральная строка с двоеточиями.
+CAST_SQL = "SELECT CAST(:value AS {type_name})"
+
+
 async def test_self_rehab_outcome_is_storable(session: AsyncSession) -> None:
     """Миграция 0002 добавила значение, и оно действительно принимается колонкой."""
     result = await session.execute(
-        text("SELECT :value::outcome_enum"), {"value": Outcome.SELF_REHAB.value}
+        text(CAST_SQL.format(type_name="outcome_enum")),
+        {"value": Outcome.SELF_REHAB.value},
     )
     assert result.scalar() == Outcome.SELF_REHAB.value
 
 
 async def test_classify_body_part_task_is_storable(session: AsyncSession) -> None:
     result = await session.execute(
-        text("SELECT :value::llm_task_enum"), {"value": LlmTask.CLASSIFY_BODY_PART.value}
+        text(CAST_SQL.format(type_name="llm_task_enum")),
+        {"value": LlmTask.CLASSIFY_BODY_PART.value},
     )
     assert result.scalar() == LlmTask.CLASSIFY_BODY_PART.value
+
+
+async def test_parse_prescription_task_is_storable(session: AsyncSession) -> None:
+    """Значение добавлено миграцией 0003 — без него разбор назначения не запишется."""
+    result = await session.execute(
+        text(CAST_SQL.format(type_name="llm_task_enum")),
+        {"value": LlmTask.PARSE_PRESCRIPTION.value},
+    )
+    assert result.scalar() == LlmTask.PARSE_PRESCRIPTION.value
+
+
+async def test_supplement_enums_are_storable(session: AsyncSession) -> None:
+    """Миграция 0004: статус курса и тяжесть реакции."""
+    for type_name, value in (
+        ("supplement_status", SupplementStatus.ACTIVE.value),
+        ("reaction_severity", ReactionSeverity.SEVERE.value),
+        ("item_kind", ItemKind.SUPPLEMENT.value),
+    ):
+        result = await session.execute(text(CAST_SQL.format(type_name=type_name)), {"value": value})
+        assert result.scalar() == value
